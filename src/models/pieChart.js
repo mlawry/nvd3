@@ -38,6 +38,13 @@ nv.models.pieChart = function() {
         y = pie.valueFormat()(pie.y()(e.point)),
         content = tooltip(tooltipLabel, y, e, chart);
 
+        // This is a hack for IE10, where the tooltip would flash and disappear because the tooltip pop up
+        // appears right under the mouse point, triggering a mouseout event that destroys the pop up
+        // immediately after the pop up shows. Once the pop up is destroyed, the mouseover event fires again
+        // and we're at the beginning of this cycle again. To fix it we just shift the pop up a little north
+        // so it does not appear under the mouse pointer.
+        top = top - 50;
+
     nv.tooltip.show([left, top], content, e.value < 0 ? 'n' : 's', null, offsetElement);
   };
 
