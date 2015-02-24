@@ -29,6 +29,7 @@ nv.models.multiBar = function() {
         , yRange
         , groupSpacing = 0.1
         , dispatch = d3.dispatch('chartClick', 'elementClick', 'elementDblClick', 'elementMouseover', 'elementMouseout', 'renderEnd')
+        , rangeBandCentreOffset = 0 // For exclusive use by multiChart.
         ;
 
     //============================================================
@@ -101,15 +102,23 @@ nv.models.multiBar = function() {
 
             // Setup Scales
             // remap and flatten the data for use in calculating the scales' domains
+            // seriesData is an array of array of {x:xi, y:yi, y0:y0i, y1:y1i} objects.
             var seriesData = (xDomain && yDomain) ? [] : // if we know xDomain and yDomain, no need to calculate
+                // data is an array of series objects: [ {key:'series1',values:[...]}, {key:'series2',values:[...]} ]
                 data.map(function(d) {
                     return d.values.map(function(d,i) {
+                        // d.y0 and d.y1 is usually undefined.
                         return { x: getX(d,i), y: getY(d,i), y0: d.y0, y1: d.y1 }
                     })
                 });
 
+            // d3.merge concats array of arrays into a single array, and map extracts d.x from the array.
+            // Documentataion for rangeBands here: https://github.com/mbostock/d3/wiki/Ordinal-Scales#ordinal_rangeBands
             x.domain(xDomain || d3.merge(seriesData).map(function(d) { return d.x }))
                 .rangeBands(xRange || [0, availableWidth], groupSpacing);
+
+            // This value is exclusively used by multiChart later on to adjust lines and x-axis to align with bars.
+            rangeBandCentreOffset = x.rangeBand() / 2.0 + (groupSpacing * x.rangeBand()); // Verify groupSpacing part later.
 
             y.domain(yDomain || d3.extent(d3.merge(seriesData).map(function(d) { return stacked ? (d.y > 0 ? d.y1 : d.y1 + d.y ) : d.y }).concat(forceY)))
                 .range(yRange || [availableHeight, 0]);
@@ -325,6 +334,7 @@ nv.models.multiBar = function() {
         id:          {get: function(){return id;}, set: function(_){id=_;}},
         hideable:    {get: function(){return hideable;}, set: function(_){hideable=_;}},
         groupSpacing:{get: function(){return groupSpacing;}, set: function(_){groupSpacing=_;}},
+        rangeBandCentreOffset: {get: function() {return rangeBandCentreOffset;}, set: function(_) {rangeBandCentreOffset = _;}},
 
         // options that require extra logic in the setter
         margin: {get: function(){return margin;}, set: function(_){

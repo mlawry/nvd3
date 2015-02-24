@@ -71,8 +71,11 @@ nv.models.scatter = function() {
 
             // Setup Scales
             // remap and flatten the data for use in calculating the scales' domains
+            // seriesData is an array of {x:xi, y:yi, size:si} objects.
             var seriesData = (xDomain && yDomain && sizeDomain) ? [] : // if we know xDomain and yDomain and sizeDomain, no need to calculate.... if Size is constant remember to set sizeDomain to speed up performance
+                // d3.merge concats array of arrays into a single array.
                 d3.merge(
+                    // data is an array of series objects: [ {key:'series1',values:[...]}, {key:'series2',values:[...]} ]
                     data.map(function(d) {
                         return d.values.map(function(d,i) {
                             return { x: getX(d,i), y: getY(d,i), size: getSize(d,i) }
@@ -80,6 +83,9 @@ nv.models.scatter = function() {
                     })
                 );
 
+            // seriesData.map(function(d) { return d.x; }) <- this extracts d.x from seriesData forming a new number array of x's.
+            // .concat(forceX) <- this adds additional numbers to the array of x's (forceX is an array).
+            // d3.extent returns an array of 2 elements, the min and max from the first function parameter.
             x   .domain(xDomain || d3.extent(seriesData.map(function(d) { return d.x; }).concat(forceX)))
 
             if (padData && data[0])

@@ -1,4 +1,4 @@
-/* nvd3 version 1.7.1(https://github.com/novus/nvd3) 2015-02-08 */
+/* nvd3 version 1.7.1 (https://github.com/novus/nvd3) 2015-02-24 */
 (function(){
 
 // set up main nv object on window
@@ -6284,6 +6284,7 @@ nv.models.multiBar = function() {
         , yRange
         , groupSpacing = 0.1
         , dispatch = d3.dispatch('chartClick', 'elementClick', 'elementDblClick', 'elementMouseover', 'elementMouseout', 'renderEnd')
+        , rangeBandCentreOffset = 0 // For exclusive use by multiChart.
         ;
 
     //============================================================
@@ -6356,15 +6357,23 @@ nv.models.multiBar = function() {
 
             // Setup Scales
             // remap and flatten the data for use in calculating the scales' domains
+            // seriesData is an array of array of {x:xi, y:yi, y0:y0i, y1:y1i} objects.
             var seriesData = (xDomain && yDomain) ? [] : // if we know xDomain and yDomain, no need to calculate
+                // data is an array of series objects: [ {key:'series1',values:[...]}, {key:'series2',values:[...]} ]
                 data.map(function(d) {
                     return d.values.map(function(d,i) {
+                        // d.y0 and d.y1 is usually undefined.
                         return { x: getX(d,i), y: getY(d,i), y0: d.y0, y1: d.y1 }
                     })
                 });
 
+            // d3.merge concats array of arrays into a single array, and map extracts d.x from the array.
+            // Documentataion for rangeBands here: https://github.com/mbostock/d3/wiki/Ordinal-Scales#ordinal_rangeBands
             x.domain(xDomain || d3.merge(seriesData).map(function(d) { return d.x }))
                 .rangeBands(xRange || [0, availableWidth], groupSpacing);
+
+            // This value is exclusively used by multiChart later on to adjust lines and x-axis to align with bars.
+            rangeBandCentreOffset = x.rangeBand() / 2.0 + (groupSpacing * x.rangeBand()); // Verify groupSpacing part later.
 
             y.domain(yDomain || d3.extent(d3.merge(seriesData).map(function(d) { return stacked ? (d.y > 0 ? d.y1 : d.y1 + d.y ) : d.y }).concat(forceY)))
                 .range(yRange || [availableHeight, 0]);
@@ -6580,6 +6589,7 @@ nv.models.multiBar = function() {
         id:          {get: function(){return id;}, set: function(_){id=_;}},
         hideable:    {get: function(){return hideable;}, set: function(_){hideable=_;}},
         groupSpacing:{get: function(){return groupSpacing;}, set: function(_){groupSpacing=_;}},
+        rangeBandCentreOffset: {get: function() {return rangeBandCentreOffset;}, set: function(_) {rangeBandCentreOffset = _;}},
 
         // options that require extra logic in the setter
         margin: {get: function(){return margin;}, set: function(_){
@@ -7836,6 +7846,12 @@ nv.models.multiChart = function() {
         legend = nv.models.legend().height(30),
         dispatch = d3.dispatch('tooltipShow', 'tooltipHide');
 
+    // Because we use padData to adjust lines' outer padding so the data points line
+    // up with the middle of the bars, we have to turn off voronoi because the use
+    // of padData seem to cause conflict with the voronoi calculations in d3.js.
+    lines1.scatter.useVoronoi(false);
+    lines2.scatter.useVoronoi(false);
+
     var showTooltip = function(e, offsetElement) {
         var left = e.pos[0] + ( offsetElement.offsetLeft || 0 ),
             top = e.pos[1] + ( offsetElement.offsetTop || 0),
@@ -7906,13 +7922,14 @@ nv.models.multiChart = function() {
             var wrap = container.selectAll('g.wrap.multiChart').data([data]);
             var gEnter = wrap.enter().append('g').attr('class', 'wrap nvd3 multiChart').append('g');
 
+            // The order is significant, we want lines to be drawn on top of the bars to look better.
             gEnter.append('g').attr('class', 'x axis');
             gEnter.append('g').attr('class', 'y1 axis');
             gEnter.append('g').attr('class', 'y2 axis');
-            gEnter.append('g').attr('class', 'lines1Wrap');
-            gEnter.append('g').attr('class', 'lines2Wrap');
             gEnter.append('g').attr('class', 'bars1Wrap');
             gEnter.append('g').attr('class', 'bars2Wrap');
+            gEnter.append('g').attr('class', 'lines1Wrap');
+            gEnter.append('g').attr('class', 'lines2Wrap');
             gEnter.append('g').attr('class', 'stack1Wrap');
             gEnter.append('g').attr('class', 'stack2Wrap');
             gEnter.append('g').attr('class', 'legendWrap');
@@ -8024,18 +8041,42 @@ nv.models.multiChart = function() {
             if(dataStack1.length){d3.transition(stack1Wrap).call(stack1);}
             if(dataStack2.length){d3.transition(stack2Wrap).call(stack2);}
 
-            if(dataBars1.length){d3.transition(bars1Wrap).call(bars1);}
-            if(dataBars2.length){d3.transition(bars2Wrap).call(bars2);}
+            // This is the outer padding to offset lines and x-axis to line up data points with bars.
+            // When setting this variable, we're assuming all bars will be on bars1 or bars2, but not both.
+            var rbcOffset = 0;
 
-            if(dataLines1.length){d3.transition(lines1Wrap).call(lines1);}
-            if(dataLines2.length){d3.transition(lines2Wrap).call(lines2);}
+            if (dataBars1.length) {
+                d3.transition(bars1Wrap).call(bars1);
+                rbcOffset = bars1.rangeBandCentreOffset();
+                console.log("bars1 offset = " + rbcOffset);
+            }
+            if (dataBars2.length) {
+                d3.transition(bars2Wrap).call(bars2);
+                rbcOffset = bars2.rangeBandCentreOffset();
+                console.log("bars2 offset = " + rbcOffset);
+            }
+
+            if (dataLines1.length) {
+                lines1.scatter.padData(rbcOffset > 0);
+                d3.transition(lines1Wrap).call(lines1);
+            }
+            if (dataLines2.length) {
+                lines2.scatter.padData(rbcOffset > 0);
+                d3.transition(lines2Wrap).call(lines2);
+            }
 
             xAxis
                 .ticks( nv.utils.calcTicksX(availableWidth/100, data) )
                 .tickSize(-availableHeight, 0);
 
+            // We also want to add outer padding to x-axis so that axis ticks and labels align with
+            // data points at centre of bars. We do this by translating x-axis by rbcOffset, and
+            // reducing the width of the entire axis (via a scale transformation).
             g.select('.x.axis')
-                .attr('transform', 'translate(0,' + availableHeight + ')');
+                .attr('transform',
+                      'translate(' + rbcOffset + ', ' + availableHeight + ') ' +
+                      'scale(' + ((availableWidth - rbcOffset*2)/availableWidth) + ', 1)');
+
             d3.transition(g.select('.x.axis'))
                 .call(xAxis);
 
@@ -9042,6 +9083,13 @@ nv.models.pieChart = function() {
             y = pie.valueFormat()(pie.y()(e.point)),
             content = tooltip(tooltipLabel, y, e, chart)
             ;
+        // This is a hack for IE10, where the tooltip would flash and disappear because the tooltip pop up
+        // appears right under the mouse point, triggering a mouseout event that destroys the pop up
+        // immediately after the pop up shows. Once the pop up is destroyed, the mouseover event fires again
+        // and we're at the beginning of this cycle again. To fix it we just shift the pop up a little north
+        // so it does not appear under the mouse pointer.
+        top = top - 50;
+
         nv.tooltip.show([left, top], content, e.value < 0 ? 'n' : 's', null, offsetElement);
     };
 
@@ -9309,8 +9357,11 @@ nv.models.scatter = function() {
 
             // Setup Scales
             // remap and flatten the data for use in calculating the scales' domains
+            // seriesData is an array of {x:xi, y:yi, size:si} objects.
             var seriesData = (xDomain && yDomain && sizeDomain) ? [] : // if we know xDomain and yDomain and sizeDomain, no need to calculate.... if Size is constant remember to set sizeDomain to speed up performance
+                // d3.merge concats array of arrays into a single array.
                 d3.merge(
+                    // data is an array of series objects: [ {key:'series1',values:[...]}, {key:'series2',values:[...]} ]
                     data.map(function(d) {
                         return d.values.map(function(d,i) {
                             return { x: getX(d,i), y: getY(d,i), size: getSize(d,i) }
@@ -9318,6 +9369,9 @@ nv.models.scatter = function() {
                     })
                 );
 
+            // seriesData.map(function(d) { return d.x; }) <- this extracts d.x from seriesData forming a new number array of x's.
+            // .concat(forceX) <- this adds additional numbers to the array of x's (forceX is an array).
+            // d3.extent returns an array of 2 elements, the min and max from the first function parameter.
             x   .domain(xDomain || d3.extent(seriesData.map(function(d) { return d.x; }).concat(forceX)))
 
             if (padData && data[0])
