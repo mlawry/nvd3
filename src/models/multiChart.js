@@ -251,12 +251,10 @@ nv.models.multiChart = function() {
             if (dataBars1.length) {
                 d3.transition(bars1Wrap).call(bars1);
                 rbcOffset = bars1.rangeBandCentreOffset();
-                console.log("bars1 offset = " + rbcOffset);
             }
             if (dataBars2.length) {
                 d3.transition(bars2Wrap).call(bars2);
                 rbcOffset = bars2.rangeBandCentreOffset();
-                console.log("bars2 offset = " + rbcOffset);
             }
 
             if (dataLines1.length) {
