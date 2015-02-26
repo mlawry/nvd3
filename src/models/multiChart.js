@@ -250,11 +250,19 @@ nv.models.multiChart = function() {
 
             if (dataBars1.length) {
                 d3.transition(bars1Wrap).call(bars1);
-                rbcOffset = bars1.rangeBandCentreOffset();
+                // Leave rbcOffset as 0 if all series in dataBars are disabled, because the
+                // rangeBandCentreOffset value is invalid if all series are disabled.
+                if (! dataBars1.every(function (series) { return series.disabled; })) {
+                    rbcOffset = bars1.rangeBandCentreOffset();
+                }
             }
             if (dataBars2.length) {
                 d3.transition(bars2Wrap).call(bars2);
-                rbcOffset = bars2.rangeBandCentreOffset();
+                // Leave rbcOffset as 0 if all series in dataBars are disabled, because the
+                // rangeBandCentreOffset value is invalid if all series are disabled.
+                if (! dataBars2.every(function (series) { return series.disabled; })) {
+                    rbcOffset = bars2.rangeBandCentreOffset();
+                }
             }
 
             if (dataLines1.length) {
