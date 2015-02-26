@@ -205,6 +205,7 @@ svg.nvd3-svg {
   opacity: 1;
 }
 
+/* Normally, only secondary axes get to be disabled (e.g. y2-axis on right-hand-side). */
 .nv-axis.nv-disabled {
   opacity: 0;
 }
@@ -232,6 +233,14 @@ svg.nvd3-svg {
   fill: none;
   stroke: #e5e5e5;
   shape-rendering: crispEdges;
+}
+
+/*
+  In multiChart, disable horizontal tick lines on the y2-axis so that we are left only with the
+  tick lines from the y1-axis, which looks more regular and grid-like (and better).
+*/
+.nvd3 .nv-y2.nv-axis line {
+  opacity: 0;
 }
 
 .nvd3 .nv-axis .zero line,
