@@ -201,11 +201,11 @@ svg.nvd3-svg {
 *  Axes
 */
 
-.axis {
+.nv-axis {
   opacity: 1;
 }
 
-.axis.nv-disabled {
+.nv-axis.nv-disabled {
   opacity: 0;
 }
 

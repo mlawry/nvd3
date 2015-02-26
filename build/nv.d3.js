@@ -1,4 +1,4 @@
-/* nvd3 version 1.7.1 (https://github.com/novus/nvd3) 2015-02-24 */
+/* nvd3 version 1.7.1 (https://github.com/novus/nvd3) 2015-02-26 */
 (function(){
 
 // set up main nv object on window
@@ -7923,9 +7923,9 @@ nv.models.multiChart = function() {
             var gEnter = wrap.enter().append('g').attr('class', 'wrap nvd3 multiChart').append('g');
 
             // The order is significant, we want lines to be drawn on top of the bars to look better.
-            gEnter.append('g').attr('class', 'x axis');
-            gEnter.append('g').attr('class', 'y1 axis');
-            gEnter.append('g').attr('class', 'y2 axis');
+            gEnter.append('g').attr('class', 'nv-x nv-axis');
+            gEnter.append('g').attr('class', 'nv-y1 nv-axis');
+            gEnter.append('g').attr('class', 'nv-y2 nv-axis');
             gEnter.append('g').attr('class', 'bars1Wrap');
             gEnter.append('g').attr('class', 'bars2Wrap');
             gEnter.append('g').attr('class', 'lines1Wrap');
@@ -8070,12 +8070,12 @@ nv.models.multiChart = function() {
             // We also want to add outer padding to x-axis so that axis ticks and labels align with
             // data points at centre of bars. We do this by translating x-axis by rbcOffset, and
             // reducing the width of the entire axis (via a scale transformation).
-            g.select('.x.axis')
+            g.select('.nv-x.nv-axis')
                 .attr('transform',
                       'translate(' + rbcOffset + ', ' + availableHeight + ') ' +
                       'scale(' + ((availableWidth - rbcOffset*2)/availableWidth) + ', 1)');
 
-            d3.transition(g.select('.x.axis'))
+            d3.transition(g.select('.nv-x.nv-axis'))
                 .call(xAxis);
 
             yAxis1
@@ -8083,21 +8083,21 @@ nv.models.multiChart = function() {
                 .tickSize( -availableWidth, 0);
 
 
-            d3.transition(g.select('.y1.axis'))
+            d3.transition(g.select('.nv-y1.nv-axis'))
                 .call(yAxis1);
 
             yAxis2
                 .ticks( nv.utils.calcTicksY(availableHeight/36, data) )
                 .tickSize( -availableWidth, 0);
 
-            d3.transition(g.select('.y2.axis'))
+            d3.transition(g.select('.nv-y2.nv-axis'))
                 .call(yAxis2);
 
-            g.select('.y1.axis')
+            g.select('.nv-y1.nv-axis')
                 .classed('nv-disabled', series1.length ? false : true)
                 .attr('transform', 'translate(' + x.range()[0] + ',0)');
 
-            g.select('.y2.axis')
+            g.select('.nv-y2.nv-axis')
                 .classed('nv-disabled', series2.length ? false : true)
                 .attr('transform', 'translate(' + x.range()[1] + ',0)');
 
