@@ -5,24 +5,24 @@ nv.models.multiChart = function() {
     // Public Variables with Default Settings
     //------------------------------------------------------------
 
-    var margin = {top: 30, right: 20, bottom: 50, left: 60},
-        color = nv.utils.defaultColor(),
-        width = null,
-        height = null,
-        showLegend = true,
-        tooltips = true,
-        tooltip = function(key, x, y, e, graph) {
+    var margin = {top: 30, right: 20, bottom: 50, left: 60}
+        , color = nv.utils.defaultColor()
+        , width = null
+        , height = null
+        , showLegend = true
+        , tooltips = true
+        , tooltip = function(key, x, y, e, graph) {
             return '<h3>' + key + '</h3>' +
                 '<p>' +  y + ' at ' + x + '</p>'
-        },
-        x,
-        y,
-        noData = 'No Data Available.',
-        yDomain1,
-        yDomain2,
-        getX = function(d) { return d.x },
-        getY = function(d) { return d.y},
-        interpolate = 'monotone'
+        }
+        , x
+        , y
+        , noData = 'No Data Available.'
+        , yDomain1
+        , yDomain2
+        , getX = function(d) { return d.x }
+        , getY = function(d) { return d.y}
+        , interpolate = 'monotone'
         ;
 
     //============================================================
@@ -36,8 +36,8 @@ nv.models.multiChart = function() {
         lines1 = nv.models.line().yScale(yScale1),
         lines2 = nv.models.line().yScale(yScale2),
 
-        bars1 = nv.models.multiBar().stacked(false).yScale(yScale1),
-        bars2 = nv.models.multiBar().stacked(false).yScale(yScale2),
+        bars1 = nv.models.multiBar().stacked(false).hideable(true).yScale(yScale1),
+        bars2 = nv.models.multiBar().stacked(false).hideable(true).yScale(yScale2),
 
         stack1 = nv.models.stackedArea().yScale(yScale1),
         stack2 = nv.models.stackedArea().yScale(yScale2),
@@ -105,19 +105,8 @@ nv.models.multiChart = function() {
                 container.selectAll('.nv-noData').remove();
             }
 
-            var series1 = data.filter(function(d) {return !d.disabled && d.yAxis == 1})
-                .map(function(d) {
-                    return d.values.map(function(d,i) {
-                        return { x: d.x, y: d.y }
-                    })
-                });
-
-            var series2 = data.filter(function(d) {return !d.disabled && d.yAxis == 2})
-                .map(function(d) {
-                    return d.values.map(function(d,i) {
-                        return { x: d.x, y: d.y }
-                    })
-                });
+            var series1 = filterSeriesValues(data, 1);
+            var series2 = filterSeriesValues(data, 2);
 
             x   .domain(d3.extent(d3.merge(series1.concat(series2)), function(d) { return d.x } ))
                 .range([0, availableWidth]);
@@ -220,12 +209,20 @@ nv.models.multiChart = function() {
                     dataStack2.filter(function(d){return !d.disabled})
                 );
 
-            var extraValue1 = dataStack1.length ? dataStack1.map(function(a){return a.values}).reduce(function(a,b){
-                return a.map(function(aVal,i){return {x: aVal.x, y: aVal.y + b[i].y}})
-            }).concat([{x:0, y:0}]) : []
-            var extraValue2 = dataStack2.length ? dataStack2.map(function(a){return a.values}).reduce(function(a,b){
-                return a.map(function(aVal,i){return {x: aVal.x, y: aVal.y + b[i].y}})
-            }).concat([{x:0, y:0}]) : []
+            // extraValue1 and extraValue2 are used to work out the domain of the y-axis scales (yScale1 and yScale2).
+            // We cannot just use the individual series values because the largest domain value is obtained
+            // from summing the series together (stacking them).
+            var extraValue1 = reduceStackedSeries(dataStack1);
+            if (bars1.stacked()) {
+                // Also include stacked bar series in extraValue.
+                extraValue1 = reduceStackedSeries(dataBars1).concat(extraValue1);
+            }
+                
+            var extraValue2 = reduceStackedSeries(dataStack2);
+            if (bars2.stacked()) {
+                // Also include stacked bar series in extraValue.
+                extraValue2 = reduceStackedSeries(dataBars2).concat(extraValue2);
+            }
 
             yScale1 .domain(yDomain1 || d3.extent(d3.merge(series1).concat(extraValue1), function(d) { return d.y } ))
                 .range([0, availableHeight])
@@ -323,6 +320,54 @@ nv.models.multiChart = function() {
         });
 
         return chart;
+    }
+    
+    // yAxisNumber - 1: keep series on left y-axis only,
+    //             - 2: keep series on right y-axis only.
+    // barsOnly - true: keep bar series on correct y-axis only,
+    //          - false: keep all types of series on correct y-axis.
+    function filterSeriesValues(data, yAxisNumber, barsOnly) {
+        // Only enabled series on the correct yAxis remains.
+        var series = data.filter(function (d) {
+            if (barsOnly && d.type !== 'bar') {
+                return false;
+            }
+            return !d.disabled && d.yAxis == yAxisNumber;
+        });
+        // Extract {x,y} data points from series.
+        var dataPoints = series.map(function (d) {
+            // 'd' is a series object, extract its values.
+            return d.values.map(function (d, i) {
+                return { x: d.x, y: d.y };
+            });
+        });
+        return dataPoints;
+    }
+
+    function reduceStackedSeries(data) {
+        if (data.length) {
+            var arrOfArr = data.map(function (a) {
+                // 'a' is a series object, and a.values is an array of {x,y} data points.
+                return a.values;
+            });
+            var arr = arrOfArr.reduce(function (a, b) {
+                // 'a' is the first array of data points, 'b' is the second array of data points.
+                // This function is called only if there is 2 or more elements in arrOfArr.
+                // The map below computes a[i].y + b[i].y assuming 'a' and 'b' have the same
+                // number of elements (i.e. data points).
+                return a.map(function (aVal, i) {
+                    return {
+                        x: aVal.x,
+                        y: aVal.y + b[i].y
+                    };
+                });
+            });
+            // At this point, arr is an array of summed (stacked) data points. Because we are showing
+            // a stacked chart, always start the y-axis at (0,0). (I guess it looks more natural.)
+            return arr.concat( [ {x:0, y:0} ] );
+        } else {
+            return [];
+        }
     }
 
     //============================================================
@@ -467,7 +512,11 @@ nv.models.multiChart = function() {
             getY = _;
             lines1.y(_);
             bars1.y(_);
-        }}
+        }},
+        stacked: {
+            get: function ()  { return bars1.stacked(); },
+            set: function (_) { bars1.stacked(_); bars2.stacked(_); }
+        }
     });
 
     nv.utils.initOptions(chart);

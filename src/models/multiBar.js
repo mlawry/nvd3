@@ -57,15 +57,25 @@ nv.models.multiBar = function() {
                 return false;
             };
 
-            if(hideable && data.length) hideable = [{
-                values: data[0].values.map(function(d) {
+            // This seems to create a dummy series (called hideable, which is initially a boolean but will
+            // become a pseudo-series), which is used when this chart is 'hidden' because all data series
+            // has been disabled through the legend. This works by assuming there is at least 1 proper data
+            // series the first time this chart is displayed, this is also when the hideable pseudo-series
+            // is created. If data is [] the first time this chart is displayed, the stacked version of
+            // this chart probably doesn't work. This hideable solution seems very hacky.
+            if (hideable && data.length) {
+                hideable = [{
+                    values: data[0].values.map(function (d) {
                         return {
                             x: d.x,
                             y: 0,
                             series: d.series,
                             size: 0.01
-                        };}
-                )}];
+                        };
+                    }),
+                    color: data[0].color ? data[0].color : 'white'
+                }];
+            }
 
             if (stacked)
                 data = d3.layout.stack()
