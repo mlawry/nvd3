@@ -11,7 +11,7 @@ nv.models.legend = function() {
         , getKey = function(d) { return d.key }
         , color = nv.utils.defaultColor()
         , align = true
-        , rightAlign = true
+        , alignPos = "right"
         , updateState = true   //If true, legend will update data.disabled and trigger a 'stateChange' dispatch.
         , radioButtonMode = false   //If true, clicking legend items will cause it to behave like a radio button. (only one can be selected at a time)
         , dispatch = d3.dispatch('legendClick', 'legendDblclick', 'legendMouseover', 'legendMouseout', 'stateChange')
@@ -147,12 +147,15 @@ nv.models.legend = function() {
                     });
 
                 //position legend as far right as possible within the total width
-                if (rightAlign) {
-                    g.attr('transform', 'translate(' + (width - margin.right - legendWidth) + ',' + margin.top + ')');
+                var trX, trY = margin.top;
+                if (alignPos === "right") {
+                    trX = width - margin.right - legendWidth;
+                } else if (alignPos === "left") {
+                    trX = 0;
+                } else { // centre
+                    trX = (width - legendWidth) / 2;
                 }
-                else {
-                    g.attr('transform', 'translate(0' + ',' + margin.top + ')');
-                }
+                g.attr('transform', 'translate(' + trX + ',' + trY + ')');
 
                 height = margin.top + margin.bottom + (Math.ceil(seriesWidths.length / seriesPerRow) * 20);
 
@@ -201,7 +204,7 @@ nv.models.legend = function() {
         height:     {get: function(){return height;}, set: function(_){height=_;}},
         key: {get: function(){return getKey;}, set: function(_){getKey=_;}},
         align:      {get: function(){return align;}, set: function(_){align=_;}},
-        rightAlign:    {get: function(){return rightAlign;}, set: function(_){rightAlign=_;}},
+        alignPos:    {get: function(){return alignPos;}, set: function(_){alignPos=_;}},
         updateState:    {get: function(){return updateState;}, set: function(_){updateState=_;}},
         radioButtonMode:    {get: function(){return radioButtonMode;}, set: function(_){radioButtonMode=_;}},
 
