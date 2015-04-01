@@ -1,4 +1,4 @@
-/* nvd3 version 1.7.1 (https://github.com/novus/nvd3) 2015-02-27 */
+/* nvd3 version 1.7.1 (https://github.com/novus/nvd3) 2015-04-02 */
 (function(){
 
 // set up main nv object on window
@@ -4279,7 +4279,7 @@ nv.models.ohlcBarChart = function() {
         , getKey = function(d) { return d.key }
         , color = nv.utils.defaultColor()
         , align = true
-        , rightAlign = true
+        , alignPos = "right"
         , updateState = true   //If true, legend will update data.disabled and trigger a 'stateChange' dispatch.
         , radioButtonMode = false   //If true, clicking legend items will cause it to behave like a radio button. (only one can be selected at a time)
         , dispatch = d3.dispatch('legendClick', 'legendDblclick', 'legendMouseover', 'legendMouseout', 'stateChange')
@@ -4415,12 +4415,15 @@ nv.models.ohlcBarChart = function() {
                     });
 
                 //position legend as far right as possible within the total width
-                if (rightAlign) {
-                    g.attr('transform', 'translate(' + (width - margin.right - legendWidth) + ',' + margin.top + ')');
+                var trX, trY = margin.top;
+                if (alignPos === "right") {
+                    trX = width - margin.right - legendWidth;
+                } else if (alignPos === "left") {
+                    trX = 0;
+                } else { // centre
+                    trX = (width - legendWidth) / 2;
                 }
-                else {
-                    g.attr('transform', 'translate(0' + ',' + margin.top + ')');
-                }
+                g.attr('transform', 'translate(' + trX + ',' + trY + ')');
 
                 height = margin.top + margin.bottom + (Math.ceil(seriesWidths.length / seriesPerRow) * 20);
 
@@ -4469,7 +4472,7 @@ nv.models.ohlcBarChart = function() {
         height:     {get: function(){return height;}, set: function(_){height=_;}},
         key: {get: function(){return getKey;}, set: function(_){getKey=_;}},
         align:      {get: function(){return align;}, set: function(_){align=_;}},
-        rightAlign:    {get: function(){return rightAlign;}, set: function(_){rightAlign=_;}},
+        alignPos:    {get: function(){return alignPos;}, set: function(_){alignPos=_;}},
         updateState:    {get: function(){return updateState;}, set: function(_){updateState=_;}},
         radioButtonMode:    {get: function(){return radioButtonMode;}, set: function(_){radioButtonMode=_;}},
 
@@ -4876,19 +4879,37 @@ nv.models.lineChart = function() {
             // Legend
             if (showLegend) {
                 legend.width(availableWidth);
+                if (showLegend === "bottom") {
+                    legend.alignPos("centre");
+                }
 
                 g.select('.nv-legendWrap')
                     .datum(data)
                     .call(legend);
 
-                if ( margin.top != legend.height()) {
+                // Adjust top/bottom margin to match legend height in case legend spans multiple lines.
+                if (showLegend === "bottom") {
+                    // Original margin is saved and added to legend height.
+                    if (typeof margin.original_bottom === "undefined") {
+                        margin.original_bottom = margin.bottom;
+                    }
+                    margin.bottom = legend.height() + margin.original_bottom;
+                } else if (showLegend !== "bottom" && margin.top != legend.height()) {
                     margin.top = legend.height();
-                    availableHeight = (height || parseInt(container.style('height')) || 400)
-                        - margin.top - margin.bottom;
                 }
+                availableHeight = (height || parseInt(container.style('height')) || 400)  // In case top/bottom margin has changed.
+                    - margin.top - margin.bottom;
 
+                var legY;
+                if (showLegend === "bottom") {
+                    // New feature, legend to appear at bottom.
+                    legY = availableHeight + (margin.bottom - legend.height());
+                } else {
+                    // Original feature, legend appears at top.
+                    legY = -margin.top;
+                }
                 wrap.select('.nv-legendWrap')
-                    .attr('transform', 'translate(0,' + (-margin.top) +')')
+                    .attr('transform', 'translate(0,' + legY +')')
             }
 
             wrap.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
@@ -6803,25 +6824,52 @@ nv.models.multiBarChart = function() {
 
             // Legend
             if (showLegend) {
-                legend.width(availableWidth - controlWidth());
+                if (showLegend === "bottom") {
+                    // New feature, legend will appear centred at bottom.
+                    legend.width(availableWidth);
+                    legend.alignPos("centre");
+                } else {
+                    legend.width(availableWidth - controlWidth());
+                }
 
-                if (multibar.barColor())
+                if (multibar.barColor()) {
+                    // multibar has been assigned a single colour. Override individual series colours
+                    // with darker shades of the single colour, so series bars will have the 'same'
+                    // base colour but different in terms of their shading.
                     data.forEach(function(series,i) {
                         series.color = d3.rgb('#ccc').darker(i * 1.5).toString();
                     });
+                }
 
                 g.select('.nv-legendWrap')
                     .datum(data)
                     .call(legend);
 
-                if ( margin.top != legend.height()) {
+                // Adjust top/bottom margin to match legend height in case legend spans multiple lines.
+                if (showLegend === "bottom") {
+                    // Original margin is saved and added to legend height.
+                    if (typeof margin.original_bottom === "undefined") {
+                        margin.original_bottom = margin.bottom;
+                    }
+                    margin.bottom = legend.height() + margin.original_bottom;
+                } else if (showLegend !== "bottom" && margin.top != legend.height()) {
                     margin.top = legend.height();
-                    availableHeight = (height || parseInt(container.style('height')) || 400)
-                        - margin.top - margin.bottom;
                 }
+                availableHeight = (height || parseInt(container.style('height')) || 400)  // In case top/bottom margin has changed.
+                    - margin.top - margin.bottom;
 
+                var legX, legY;
+                if (showLegend === "bottom") {
+                    // New feature, legend to appear at bottom.
+                    legX = 0;
+                    legY = availableHeight + (margin.bottom - legend.height());
+                } else {
+                    // Original feature, legend appears at top.
+                    legX = controlWidth();
+                    legY = -margin.top;
+                }
                 g.select('.nv-legendWrap')
-                    .attr('transform', 'translate(' + controlWidth() + ',' + (-margin.top) +')');
+                    .attr('transform', 'translate(' + legX + ',' + legY +')');
             }
 
             // Controls
@@ -7588,25 +7636,52 @@ nv.models.multiBarHorizontalChart = function() {
 
             // Legend
             if (showLegend) {
-                legend.width(availableWidth - controlWidth());
+                if (showLegend === "bottom") {
+                    // New feature, legend will appear centred at bottom.
+                    legend.width(availableWidth);
+                    legend.alignPos("centre");
+                } else {
+                    legend.width(availableWidth - controlWidth());
+                }
 
-                if (multibar.barColor())
+                if (multibar.barColor()) {
+                    // multibar has been assigned a single colour. Override individual series colours
+                    // with darker shades of the single colour, so series bars will have the 'same'
+                    // base colour but different in terms of their shading.
                     data.forEach(function(series,i) {
                         series.color = d3.rgb('#ccc').darker(i * 1.5).toString();
                     });
+                }
 
                 g.select('.nv-legendWrap')
                     .datum(data)
                     .call(legend);
 
-                if ( margin.top != legend.height()) {
+                // Adjust top/bottom margin to match legend height in case legend spans multiple lines.
+                if (showLegend === "bottom") {
+                    // Original margin is saved and added to legend height.
+                    if (typeof margin.original_bottom === "undefined") {
+                        margin.original_bottom = margin.bottom;
+                    }
+                    margin.bottom = legend.height() + margin.original_bottom;
+                } else if (showLegend !== "bottom" && margin.top != legend.height()) {
                     margin.top = legend.height();
-                    availableHeight = (height || parseInt(container.style('height')) || 400)
-                        - margin.top - margin.bottom;
                 }
+                availableHeight = (height || parseInt(container.style('height')) || 400)
+                    - margin.top - margin.bottom;
 
+                var legX, legY;
+                if (showLegend === "bottom") {
+                    // New feature, legend to appear at bottom.
+                    legX = 0;
+                    legY = availableHeight + (margin.bottom - legend.height());
+                } else {
+                    // Original feature, legend appears at top.
+                    legX = controlWidth();
+                    legY = -margin.top;
+                }
                 g.select('.nv-legendWrap')
-                    .attr('transform', 'translate(' + controlWidth() + ',' + (-margin.top) +')');
+                    .attr('transform', 'translate(' + legX + ',' + legY +')');
             }
 
             // Controls
@@ -7941,7 +8016,14 @@ nv.models.multiChart = function() {
 
             if (showLegend) {
                 legend.color(color_array);
-                legend.width( availableWidth / 2 );
+                
+                if (showLegend === "bottom") {
+                    // New feature, legend will appear centred at bottom.
+                    legend.width(availableWidth);
+                    legend.alignPos("centre");
+                } else {
+                    legend.width( availableWidth / 2 );
+                }
 
                 g.select('.legendWrap')
                     .datum(data.map(function(series) {
@@ -7951,14 +8033,31 @@ nv.models.multiChart = function() {
                     }))
                     .call(legend);
 
-                if ( margin.top != legend.height()) {
+                // Adjust top/bottom margin to match legend height in case legend spans multiple lines.
+                if (showLegend === "bottom") {
+                    // Original margin is saved and added to legend height.
+                    if (typeof margin.original_bottom === "undefined") {
+                        margin.original_bottom = margin.bottom;
+                    }
+                    margin.bottom = legend.height() + margin.original_bottom;
+                } else if (showLegend !== "bottom" && margin.top != legend.height()) {
                     margin.top = legend.height();
-                    availableHeight = (height || parseInt(container.style('height')) || 400)
-                        - margin.top - margin.bottom;
                 }
+                availableHeight = (height || parseInt(container.style('height')) || 400) // In case top/bottom margin has changed.
+                    - margin.top - margin.bottom;
 
+                var legX, legY;
+                if (showLegend === "bottom") {
+                    // New feature, legend to appear at bottom.
+                    legX = 0;
+                    legY = availableHeight + (margin.bottom - legend.height());
+                } else {
+                    // Original feature, legend appears at top.
+                    legX = availableWidth / 2;
+                    legY = -margin.top;
+                }
                 g.select('.legendWrap')
-                    .attr('transform', 'translate(' + ( availableWidth / 2 ) + ',' + (-margin.top) +')');
+                    .attr('transform', 'translate(' + legX + ',' + legY +')');
             }
 
             lines1
@@ -9248,19 +9347,35 @@ nv.models.pieChart = function() {
             // Legend
             if (showLegend) {
                 legend.width( availableWidth ).key(pie.x());
+                legend.alignPos("centre");
 
                 wrap.select('.nv-legendWrap')
                     .datum(data)
                     .call(legend);
 
-                if ( margin.top != legend.height()) {
+                // Adjust top/bottom margin to match legend height in case legend spans multiple lines.
+                if (showLegend === "bottom") {
+                    // Original margin is saved and added to legend height.
+                    if (typeof margin.original_bottom === "undefined") {
+                        margin.original_bottom = margin.bottom;
+                    }
+                    margin.bottom = legend.height() + margin.original_bottom;
+                } else if (showLegend !== "bottom" && margin.top != legend.height()) {
                     margin.top = legend.height();
-                    availableHeight = (height || parseInt(container.style('height')) || 400)
-                        - margin.top - margin.bottom;
                 }
+                availableHeight = (height || parseInt(container.style('height')) || 400)  // In case top/bottom margin has changed.
+                    - margin.top - margin.bottom;
 
+                var legY;
+                if (showLegend === "bottom") {
+                    // New feature, legend to appear at bottom.
+                    legY = availableHeight + (margin.bottom - legend.height());
+                } else {
+                    // Original feature, legend appears at top.
+                    legY = -margin.top;
+                }
                 wrap.select('.nv-legendWrap')
-                    .attr('transform', 'translate(0,' + (-margin.top) +')');
+                    .attr('transform', 'translate(0,' + legY +')');
             }
             wrap.attr('transform', 'translate(' + margin.left + ',' + margin.top + ')');
 
@@ -10031,20 +10146,43 @@ nv.models.scatterChart = function() {
 
             // Legend
             if (showLegend) {
-                legend.width( availableWidth / 2 );
+                if (showLegend === "bottom") {
+                    // New feature, legend will appear centred at bottom.
+                    legend.width(availableWidth);
+                    legend.alignPos("centre");
+                } else {
+                    legend.width(availableWidth / 2);
+                }
 
                 wrap.select('.nv-legendWrap')
                     .datum(data)
                     .call(legend);
 
-                if ( margin.top != legend.height()) {
+                // Adjust top/bottom margin to match legend height in case legend spans multiple lines.
+                if (showLegend === "bottom") {
+                    // Original margin is saved and added to legend height.
+                    if (typeof margin.original_bottom === "undefined") {
+                        margin.original_bottom = margin.bottom;
+                    }
+                    margin.bottom = legend.height() + margin.original_bottom;
+                } else if (showLegend !== "bottom" && margin.top != legend.height()) {
                     margin.top = legend.height();
-                    availableHeight = (height || parseInt(container.style('height')) || 400)
-                        - margin.top - margin.bottom;
                 }
+                availableHeight = (height || parseInt(container.style('height')) || 400)  // In case top/bottom margin has changed.
+                    - margin.top - margin.bottom;
 
+                var legX, legY;
+                if (showLegend === "bottom") {
+                    // New feature, legend to appear at bottom.
+                    legX = 0;
+                    legY = availableHeight + (margin.bottom - legend.height());
+                } else {
+                    // Original feature, legend appears at top.
+                    legX = availableWidth / 2;
+                    legY = -margin.top;
+                }
                 wrap.select('.nv-legendWrap')
-                    .attr('transform', 'translate(' + (availableWidth / 2) + ',' + (-margin.top) +')');
+                    .attr('transform', 'translate(' + legX + ',' + legY +')');
             }
 
             // Main Chart Component(s)
@@ -11113,19 +11251,43 @@ nv.models.stackedAreaChart = function() {
 
             // Legend
             if (showLegend) {
-                var legendWidth = (showControls) ? availableWidth - controlWidth : availableWidth;
-
-                legend.width(legendWidth);
+                var legendWidth;
+                if (showLegend === "bottom") {
+                    // New feature, legend will appear centred at bottom.
+                    legend.width(availableWidth);
+                    legend.alignPos("centre");
+                } else {
+                    legendWidth = (showControls) ? availableWidth - controlWidth : availableWidth;
+                    legend.width(legendWidth);
+                }
+                
                 g.select('.nv-legendWrap').datum(data).call(legend);
 
-                if ( margin.top != legend.height()) {
+                // Adjust top/bottom margin to match legend height in case legend spans multiple lines.
+                if (showLegend === "bottom") {
+                    // Original margin is saved and added to legend height.
+                    if (typeof margin.original_bottom === "undefined") {
+                        margin.original_bottom = margin.bottom;
+                    }
+                    margin.bottom = legend.height() + margin.original_bottom;
+                } else if (showLegend !== "bottom" && margin.top != legend.height()) {
                     margin.top = legend.height();
-                    availableHeight = (height || parseInt(container.style('height')) || 400)
-                        - margin.top - margin.bottom;
                 }
+                availableHeight = (height || parseInt(container.style('height')) || 400)  // In case top/bottom margin has changed.
+                    - margin.top - margin.bottom;
 
+                var legX, legY;
+                if (showLegend === "bottom") {
+                    // New feature, legend to appear at bottom.
+                    legX = 0;
+                    legY = availableHeight + (margin.bottom - legend.height());
+                } else {
+                    // Original feature, legend appears at top.
+                    legX = availableWidth - legendWidth;
+                    legY = -margin.top;
+                }
                 g.select('.nv-legendWrap')
-                    .attr('transform', 'translate(' + (availableWidth-legendWidth) + ',' + (-margin.top) +')');
+                    .attr('transform', 'translate(' + legX + ',' + legY +')');
             }
 
             // Controls

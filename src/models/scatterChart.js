@@ -195,20 +195,43 @@ nv.models.scatterChart = function() {
 
             // Legend
             if (showLegend) {
-                legend.width( availableWidth / 2 );
+                if (showLegend === "bottom") {
+                    // New feature, legend will appear centred at bottom.
+                    legend.width(availableWidth);
+                    legend.alignPos("centre");
+                } else {
+                    legend.width(availableWidth / 2);
+                }
 
                 wrap.select('.nv-legendWrap')
                     .datum(data)
                     .call(legend);
 
-                if ( margin.top != legend.height()) {
+                // Adjust top/bottom margin to match legend height in case legend spans multiple lines.
+                if (showLegend === "bottom") {
+                    // Original margin is saved and added to legend height.
+                    if (typeof margin.original_bottom === "undefined") {
+                        margin.original_bottom = margin.bottom;
+                    }
+                    margin.bottom = legend.height() + margin.original_bottom;
+                } else if (showLegend !== "bottom" && margin.top != legend.height()) {
                     margin.top = legend.height();
-                    availableHeight = (height || parseInt(container.style('height')) || 400)
-                        - margin.top - margin.bottom;
                 }
+                availableHeight = (height || parseInt(container.style('height')) || 400)  // In case top/bottom margin has changed.
+                    - margin.top - margin.bottom;
 
+                var legX, legY;
+                if (showLegend === "bottom") {
+                    // New feature, legend to appear at bottom.
+                    legX = 0;
+                    legY = availableHeight + (margin.bottom - legend.height());
+                } else {
+                    // Original feature, legend appears at top.
+                    legX = availableWidth / 2;
+                    legY = -margin.top;
+                }
                 wrap.select('.nv-legendWrap')
-                    .attr('transform', 'translate(' + (availableWidth / 2) + ',' + (-margin.top) +')');
+                    .attr('transform', 'translate(' + legX + ',' + legY +')');
             }
 
             // Main Chart Component(s)
