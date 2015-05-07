@@ -1,4 +1,4 @@
-/* nvd3 version 1.7.1 (https://github.com/novus/nvd3) 2015-04-02 */
+/* nvd3 version 1.7.1 (https://github.com/novus/nvd3) 2015-05-07 */
 (function(){
 
 // set up main nv object on window
@@ -8375,6 +8375,7 @@ nv.models.multiChart = function() {
     //------------------------------------------------------------
 
     chart.dispatch = dispatch;
+    chart.legend = legend;
     chart.lines1 = lines1;
     chart.lines2 = lines2;
     chart.bars1 = bars1;
