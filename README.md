@@ -1,3 +1,19 @@
+This fork of nvd3 works well with d3.js version 3.4.13.
+
+This fork tracks the master branch and I will attempt to merge the upstream changes about once a year.
+
+Build instructions:
+
+1. Have nodejs installed via system's package manager.
+2. `sudo npm install -g grunt grunt-cli bower`
+3. `cd nvd3`
+4. `npm install` # Do not sudo. This will install required modules into nvd3.
+5. `grunt production` # This will build.
+
+Original nvd3 documentation below.
+
+------
+
 ## NVD3 - A reusable D3 charting library
 
 Inspired by the work of Mike Bostock's [Towards Reusable Charts](http://bost.ocks.org/mike/chart/), and supported by a combined effort of [Novus](http://www.novus.com) and the NVD3 community.
