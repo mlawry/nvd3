@@ -1,4 +1,4 @@
-/* nvd3 version 1.7.1 (https://github.com/novus/nvd3) 2015-05-07 */
+/* nvd3 version 1.7.1 (https://github.com/novus/nvd3) 2015-11-09 */
 (function(){
 
 // set up main nv object on window
@@ -7456,7 +7456,7 @@ nv.models.multiBarHorizontal = function() {
         color:  {get: function(){return color;}, set: function(_){
             color = nv.utils.getColor(_);
         }},
-        barColor:  {get: function(){return color;}, set: function(_){
+        barColor:  {get: function(){return barColor;}, set: function(_){
             barColor = nv.utils.getColor(_);
         }}
     });
