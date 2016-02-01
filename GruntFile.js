@@ -1,4 +1,3 @@
-var version = '1.7.1';
 module.exports = function(grunt) {
     var _pkg = grunt.file.readJSON('package.json');
 
@@ -6,13 +5,24 @@ module.exports = function(grunt) {
     grunt.initConfig({
         pkg: _pkg,
         concat: {
-            options: {
-                separator: '',
-                banner: '/* nvd3 version ' + _pkg.version + ' (' + _pkg.url + ') ' +
-                    '<%= grunt.template.today("yyyy-mm-dd") %> */\n' + '(function(){\n',
-                footer: '\nnv.version = "' + _pkg.version + '";\n})();'
+            css: {
+                options: {
+                    separator: '\n',
+                    banner: '/* nvd3 version ' + _pkg.version + ' (' + _pkg.url + ') ' +
+                        '<%= grunt.template.today("yyyy-mm-dd") %> */\n'
+                },
+                src: [
+                    'src/css/*.css'
+                ],
+                dest: 'build/nv.d3.css'
             },
-            dist: {
+            js: {
+                options: {
+                    separator: '',
+                    banner: '/* nvd3 version ' + _pkg.version + ' (' + _pkg.url + ') ' +
+                        '<%= grunt.template.today("yyyy-mm-dd") %> */\n' + '(function(){\n',
+                    footer: '\nnv.version = "' + _pkg.version + '";\n})();'
+                },
                 src: [
                     'src/core.js',
                     'src/dom.js',
@@ -22,12 +32,13 @@ module.exports = function(grunt) {
                     //Include all files in src/models
                     'src/models/*.js'
                     // example to exclude files: '!src/models/excludeMe*'
-                     ],
+                ],
                 dest: 'build/nv.d3.js'
             }
         },
         uglify: {
             options: {
+                sourceMap: true,
                 banner: '/* nvd3 version ' + _pkg.version + ' (' + _pkg.url + ') ' +
                     '<%= grunt.template.today("yyyy-mm-dd") %> */\n'
             },
@@ -35,6 +46,18 @@ module.exports = function(grunt) {
                 files: {
                     'build/nv.d3.min.js': ['build/nv.d3.js']
                 }
+            }
+        },
+        replace: {
+            version: {
+                src: [
+                    'package.js'
+                ],
+                overwrite: true,
+                replacements: [{
+                    from: /(version?\s?=?\:?\s\')([\d\.]*)\'/gi,
+                    to: '$1' + _pkg.version + "'"
+                }]
             }
         },
         jshint: {
@@ -52,18 +75,21 @@ module.exports = function(grunt) {
             }
         },
         copy: {
-          css: {
-            files: [
-              { src: 'src/nv.d3.css', dest: 'build/nv.d3.css' }
-            ]
-          }
+            css: {
+                files: [
+                    { src: 'src/nv.d3.css', dest: 'build/nv.d3.css' }
+                ]
+            }
         },
         cssmin: {
-          dist: {
-            files: {
-                'build/nv.d3.min.css' : ['build/nv.d3.css']
+            options: {
+                sourceMap: true
+            },
+            dist: {
+                files: {
+                    'build/nv.d3.min.css' : ['build/nv.d3.css']
+                }
             }
-          }
         },
         karma: {
             unit: {
@@ -94,6 +120,7 @@ module.exports = function(grunt) {
                         'src/models/indented*',
                         'src/models/linePlus*',
                         'src/models/ohlcBar.js',
+                        'src/models/candlestickBar.js',
                         'src/models/multiChart.js'
                     ]
                 }
@@ -108,9 +135,10 @@ module.exports = function(grunt) {
     grunt.loadNpmTasks('grunt-contrib-copy');
     grunt.loadNpmTasks('grunt-contrib-cssmin');
     grunt.loadNpmTasks('grunt-karma');
+    grunt.loadNpmTasks('grunt-text-replace');
 
     grunt.registerTask('default', ['concat','copy','karma:unit']);
-    grunt.registerTask('production', ['concat', 'uglify', 'copy', 'cssmin']);
+    grunt.registerTask('production', ['concat', 'uglify', 'copy', 'cssmin', 'replace']);
     grunt.registerTask('release', ['production']);
     grunt.registerTask('lint', ['jshint']);
 };
