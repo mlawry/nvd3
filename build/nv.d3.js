@@ -1,4 +1,4 @@
-/* nvd3 version 1.8.2-mlawry (https://github.com/novus/nvd3) 2016-02-02 */
+/* nvd3 version 1.8.2-mlawry (https://github.com/novus/nvd3) 2016-02-17 */
 (function(){
 
 // set up main nv object
@@ -1042,7 +1042,7 @@ nv.utils.calcApproxTextWidth = function (svgTextElem) {
     if (nv.utils.isFunction(svgTextElem.style) && nv.utils.isFunction(svgTextElem.text)) {
         var fontSize = parseInt(svgTextElem.style("font-size").replace("px",""), 10);
         var textLength = svgTextElem.text().length;
-        return textLength * fontSize * 0.5;
+        return nv.utils.NaNtoZero(textLength * fontSize * 0.5);
     }
     return 0;
 };
@@ -1587,6 +1587,7 @@ nv.utils.arrayEquals = function (array1, array2) {
         , isOrdinal = false
         , ticks = null
         , axisLabelDistance = 0
+        , fontSize = undefined
         , duration = 250
         , dispatch = d3.dispatch('renderEnd')
         ;
@@ -1633,6 +1634,11 @@ nv.utils.arrayEquals = function (array1, array2) {
             var axisLabel = g.selectAll('text.nv-axislabel')
                 .data([axisLabelText || null]);
             axisLabel.exit().remove();
+
+            //only skip when fontSize is undefined so it can be cleared with a null or blank string
+            if (fontSize !== undefined) {
+                g.selectAll('g').select("text").style('font-size', fontSize);
+            }
 
             var xLabelMargin;
             var axisMaxMin;
@@ -1684,6 +1690,8 @@ nv.utils.arrayEquals = function (array1, array2) {
                     var xTicks = g.selectAll('g').select("text");
                     var rotateLabelsRule = '';
                     if (rotateLabels%360) {
+                        //Reset transform on ticks so textHeight can be calculated correctly
+                        xTicks.attr('transform', ''); 
                         //Calculate the longest xTick width
                         xTicks.each(function(d,i){
                             var box = this.getBoundingClientRect();
@@ -1923,6 +1931,7 @@ nv.utils.arrayEquals = function (array1, array2) {
         height:            {get: function(){return height;}, set: function(_){height=_;}},
         ticks:             {get: function(){return ticks;}, set: function(_){ticks=_;}},
         width:             {get: function(){return width;}, set: function(_){width=_;}},
+        fontSize:          {get: function(){return fontSize;}, set: function(_){fontSize=_;}},
 
         // options that require extra logic in the setter
         margin: {get: function(){return margin;}, set: function(_){
@@ -4231,11 +4240,6 @@ nv.models.discreteBarChart = function() {
                 g.select(".nv-y.nv-axis")
                     .attr("transform", "translate(" + availableWidth + ",0)");
             }	    
-
-            if (rightAlignYAxis) {
-                g.select(".nv-y.nv-axis")
-                    .attr("transform", "translate(" + availableWidth + ",0)");
-            }
 
             // Main Chart Component(s)
             discretebar
@@ -10599,6 +10603,7 @@ nv.models.parallelCoordinatesChart = function () {
         , displayBrush = true
         , defaultState = null
         , noData = null
+        , nanValue = "undefined"
         , dispatch = d3.dispatch('dimensionsOrder', 'brushEnd', 'stateChange', 'changeState', 'renderEnd')
         , controlWidth = function () { return showControls ? 180 : 0 }
         ;
@@ -10823,7 +10828,13 @@ nv.models.parallelCoordinatesChart = function () {
                 Object.keys(evt.values).forEach(function (d) {
                     var dim = evt.dimensions.filter(function (dd) {return dd.key === d;})[0];
                     if(dim){
-                        tp.series.push({idx:dim.currentPosition, key: d, value: dim.format(evt.values[d]), color: dim.color});
+                        var v;
+                        if (isNaN(evt.values[d]) || isNaN(parseFloat(evt.values[d]))) {
+                            v = nanValue;
+                        } else {
+                            v = dim.format(evt.values[d]);
+                        }
+                        tp.series.push({ idx: dim.currentPosition, key: d, value: v, color: dim.color });
                     }
                 });
                 tp.series.sort(function(a,b) {return a.idx - b.idx});
@@ -10858,7 +10869,8 @@ nv.models.parallelCoordinatesChart = function () {
             dimensionData: { get: function () { return dimensionData; }, set: function (_) { dimensionData = _; } },
             displayBrush: { get: function () { return displayBrush; }, set: function (_) { displayBrush = _; } },
             noData: { get: function () { return noData; }, set: function (_) { noData = _; } },
-
+            nanValue: { get: function () { return nanValue; }, set: function (_) { nanValue = _; } },
+            
             // options that require extra logic in the setter
             margin: {
                 get: function () { return margin; },
@@ -11378,8 +11390,8 @@ nv.models.pieChart = function() {
             nv.utils.initSVG(container);
 
             var that = this;
-            var availableWidth = nv.utils.availableWidth(pie.width(), container, margin),
-                availableHeight = nv.utils.availableHeight(pie.height(), container, margin);
+            var availableWidth = nv.utils.availableWidth(width, container, margin),
+                availableHeight = nv.utils.availableHeight(height, container, margin);
 
             chart.update = function() { container.transition().call(chart); };
             chart.container = this;
@@ -13078,7 +13090,6 @@ nv.models.stackedArea = function() {
                 .y(function(d) {
                     if (d.display !== undefined) { return d.display.y + d.display.y0; }
                 })
-                .forceY([0])
                 .color(data.map(function(d,i) {
                     d.color = d.color || color(d, d.seriesIndex);
                     return d.color;
