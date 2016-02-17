@@ -45,7 +45,7 @@
 }
 
 .nvd3 .nv-bars rect {
-    fill-opacity: .75;
+    fill-opacity: 1;
 
     transition: fill-opacity 250ms linear;
     -moz-transition: fill-opacity 250ms linear;
@@ -53,7 +53,7 @@
 }
 
 .nvd3 .nv-bars rect.hover {
-    fill-opacity: 1;
+    fill-opacity: 0.8;
 }
 
 .nvd3 .nv-bars .hover rect {
@@ -72,6 +72,7 @@
 .nvd3 .nv-multibarHorizontal .nv-groups rect,
 .nvd3 .nv-discretebar .nv-groups rect {
     stroke-opacity: 0;
+    fill-opacity: 1;
 
     transition: fill-opacity 250ms linear;
     -moz-transition: fill-opacity 250ms linear;
@@ -82,7 +83,7 @@
 .nvd3 .nv-multibarHorizontal .nv-groups rect:hover,
 .nvd3 .nv-candlestickBar .nv-ticks rect:hover,
 .nvd3 .nv-discretebar .nv-groups rect:hover {
-    fill-opacity: 1;
+    fill-opacity: 0.8;
 }
 
 .nvd3 .nv-discretebar .nv-groups text,
@@ -409,10 +410,10 @@ svg.nvd3-svg {
 }
 
 .nvd3.nv-pie path {
-    fill-opacity: .7;
+    fill-opacity: 1;
 }
 .nvd3.nv-pie .hover path {
-    fill-opacity: 1;
+    fill-opacity: 0.8;
 }
 .nvd3.nv-pie .nv-label {
     pointer-events: none;

@@ -192,6 +192,7 @@ nv.models.line = function() {
         defined: {get: function(){return defined;}, set: function(_){defined=_;}},
         interpolate:      {get: function(){return interpolate;}, set: function(_){interpolate=_;}},
         clipEdge:    {get: function(){return clipEdge;}, set: function(_){clipEdge=_;}},
+        strokeWidth:      {get: function(){return strokeWidth;}, set: function(_){strokeWidth=_;}},
 
         // options that require extra logic in the setter
         margin: {get: function(){return margin;}, set: function(_){

@@ -6105,6 +6105,7 @@ nv.models.line = function() {
         defined: {get: function(){return defined;}, set: function(_){defined=_;}},
         interpolate:      {get: function(){return interpolate;}, set: function(_){interpolate=_;}},
         clipEdge:    {get: function(){return clipEdge;}, set: function(_){clipEdge=_;}},
+        strokeWidth:      {get: function(){return strokeWidth;}, set: function(_){strokeWidth=_;}},
 
         // options that require extra logic in the setter
         margin: {get: function(){return margin;}, set: function(_){
@@ -7729,7 +7730,7 @@ nv.models.multiBar = function() {
                 .style('stroke', function(d,i){ return color(d, i) });
             groups
                 .style('stroke-opacity', 1)
-                .style('fill-opacity', 0.75);
+                ; //.style('fill-opacity', 0.75); // Why set this inline? Now set via bars.css '.nvd3 .nv-multibar .nv-groups rect' 
 
             var bars = groups.selectAll('rect.nv-bar')
                 .data(function(d) { return (hideable && !data.length) ? hideable.values : d.values });
