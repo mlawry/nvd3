@@ -230,7 +230,7 @@ nv.models.multiBar = function() {
                 .style('stroke', function(d,i){ return color(d, i) });
             groups
                 .style('stroke-opacity', 1)
-                .style('fill-opacity', 0.75);
+                ; //.style('fill-opacity', 0.75); // Why set this inline? Now set via bars.css '.nvd3 .nv-multibar .nv-groups rect' 
 
             var bars = groups.selectAll('rect.nv-bar')
                 .data(function(d) { return (hideable && !data.length) ? hideable.values : d.values });
