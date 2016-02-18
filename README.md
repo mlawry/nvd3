@@ -1,4 +1,4 @@
-This fork of nvd3 works well with d3.js version 3.5.14.
+This fork of nvd3 works well with [(my fork of) d3.js](https://github.com/mlawry/d3) version 3.5.14.
 
 This fork tracks the master branch of github.com/novus/nvd3 and I will attempt to merge the upstream changes about once a year.
 

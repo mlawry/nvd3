@@ -99,7 +99,7 @@ nv.models.scatter = function() {
             });
 
             // Setup Scales
-            var logScale = chart.yScale().name === d3.scale.log().name ? true : false; 
+            var logScale = false; //chart.yScale().name === d3.scale.log().name ? true : false; // See https://github.com/novus/nvd3/issues/1520
             // remap and flatten the data for use in calculating the scales' domains
             // seriesData is an array of {x:xi, y:yi, size:si} objects.
             var seriesData = (xDomain && yDomain && sizeDomain) ? [] : // if we know xDomain and yDomain and sizeDomain, no need to calculate.... if Size is constant remember to set sizeDomain to speed up performance
