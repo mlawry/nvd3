@@ -6551,7 +6551,11 @@ nv.models.lineChart = function() {
                         var point = currentValues[pointIndex];
                         var pointYValue = chart.y()(point, pointIndex);
                         if (pointYValue !== null) {
-                            lines.highlightPoint(series.seriesIndex, pointIndex, true);
+                            // Must use i because user can disable series using the legend, so those
+                            // (enabled) series will take on indices starting from 0. This means
+                            // series.seriesIndex will be different from i (i covers only the enabled
+                            // series whereas series.seriesIndex covers all [enabled and disabled] series). 
+                            lines.highlightPoint(i, pointIndex, true);
                         }
                         if (point === undefined) return;
                         if (singlePoint === undefined) singlePoint = point;
