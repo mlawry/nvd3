@@ -177,13 +177,17 @@ nv.models.stackedAreaChart = function() {
                     // Original margin is saved and added to legend height.
                     if (typeof margin.original_bottom === "undefined") {
                         margin.original_bottom = margin.bottom;
+                        margin.bottom = legend.height() + margin.original_bottom;
+                        // This must be called after margin.bottom changes for the first time.
+                        // Otherwise the 2nd and 3rd rows of the legend will be cut-off.
+                        chart.update();
                     }
                     margin.bottom = legend.height() + margin.original_bottom;
                 } else if (showLegend !== "bottom" && margin.top != legend.height()) {
                     margin.top = legend.height();
                 }
                 availableHeight = nv.utils.availableHeight(height, container, margin);
-
+                
                 var legX, legY;
                 if (showLegend === "bottom") {
                     // New feature, legend to appear at bottom.

@@ -200,7 +200,7 @@ nv.models.lineChart = function() {
                 var legY;
                 if (showLegend === "bottom") {
                     // New feature, legend to appear at bottom.
-                    legY = availableHeight + (margin.bottom - legend.height());
+                    legY = availableHeight1 + (margin.bottom - legend.height());
                 } else {
                     // Original feature, legend appears at top.
                     legY = -margin.top;
