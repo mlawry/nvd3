@@ -232,7 +232,7 @@ nv.models.pieChart = function() {
         width:      {get: function(){return width;}, set: function(_){width=_;}},
         height:     {get: function(){return height;}, set: function(_){height=_;}},
         noData:         {get: function(){return noData;},         set: function(_){noData=_;}},
-        showLegend:     {get: function(){return showLegend;},     set: function(_){showLegend=_;}},
+        showLegend:     {get: function(){return showLegend;},     set: function(_){showLegend=_; if ((typeof showLegend) === 'string') { legendPosition = showLegend; } }},
         legendPosition: {get: function(){return legendPosition;}, set: function(_){legendPosition=_;}},
         defaultState:   {get: function(){return defaultState;},   set: function(_){defaultState=_;}},
 
