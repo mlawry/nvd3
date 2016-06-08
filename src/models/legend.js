@@ -272,7 +272,16 @@ nv.models.legend = function() {
                     });
 
                 //position legend as far right as possible within the total width
-                g.attr('transform', 'translate(' + (width - margin.right - maxwidth) + ',' + margin.top + ')');
+                var trX, trY = margin.top;
+                if (alignPos === "right") {
+                    trX = width - margin.right - maxwidth;
+                } else if (alignPos === "left") {
+                    trX = 0;
+                } else { // centre
+                    trX = (width - maxwidth) / 2;
+                }
+                
+                g.attr('transform', 'translate(' + trX + ',' + trY + ')');
 
                 height = margin.top + margin.bottom + ypos + 15;
             }
