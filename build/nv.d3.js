@@ -1,4 +1,4 @@
-/* nvd3 version 1.8.2-mlawry (https://github.com/novus/nvd3) 2016-02-19 */
+/* nvd3 version 1.8.2-mlawry (https://github.com/novus/nvd3) 2016-06-08 */
 (function(){
 
 // set up main nv object
@@ -5803,7 +5803,16 @@ nv.models.legend = function() {
                     });
 
                 //position legend as far right as possible within the total width
-                g.attr('transform', 'translate(' + (width - margin.right - maxwidth) + ',' + margin.top + ')');
+                var trX, trY = margin.top;
+                if (alignPos === "right") {
+                    trX = width - margin.right - maxwidth;
+                } else if (alignPos === "left") {
+                    trX = 0;
+                } else { // centre
+                    trX = (width - maxwidth) / 2;
+                }
+                
+                g.attr('transform', 'translate(' + trX + ',' + trY + ')');
 
                 height = margin.top + margin.bottom + ypos + 15;
             }
@@ -6343,7 +6352,7 @@ nv.models.lineChart = function() {
                 var legY;
                 if (showLegend === "bottom") {
                     // New feature, legend to appear at bottom.
-                    legY = availableHeight + (margin.bottom - legend.height());
+                    legY = availableHeight1 + (margin.bottom - legend.height());
                 } else {
                     // Original feature, legend appears at top.
                     legY = -margin.top;
@@ -11561,7 +11570,7 @@ nv.models.pieChart = function() {
         width:      {get: function(){return width;}, set: function(_){width=_;}},
         height:     {get: function(){return height;}, set: function(_){height=_;}},
         noData:         {get: function(){return noData;},         set: function(_){noData=_;}},
-        showLegend:     {get: function(){return showLegend;},     set: function(_){showLegend=_;}},
+        showLegend:     {get: function(){return showLegend;},     set: function(_){showLegend=_; if ((typeof showLegend) === 'string') { legendPosition = showLegend; } }},
         legendPosition: {get: function(){return legendPosition;}, set: function(_){legendPosition=_;}},
         defaultState:   {get: function(){return defaultState;},   set: function(_){defaultState=_;}},
 
@@ -13489,13 +13498,17 @@ nv.models.stackedAreaChart = function() {
                     // Original margin is saved and added to legend height.
                     if (typeof margin.original_bottom === "undefined") {
                         margin.original_bottom = margin.bottom;
+                        margin.bottom = legend.height() + margin.original_bottom;
+                        // This must be called after margin.bottom changes for the first time.
+                        // Otherwise the 2nd and 3rd rows of the legend will be cut-off.
+                        chart.update();
                     }
                     margin.bottom = legend.height() + margin.original_bottom;
                 } else if (showLegend !== "bottom" && margin.top != legend.height()) {
                     margin.top = legend.height();
                 }
                 availableHeight = nv.utils.availableHeight(height, container, margin);
-
+                
                 var legX, legY;
                 if (showLegend === "bottom") {
                     // New feature, legend to appear at bottom.
@@ -13726,8 +13739,8 @@ nv.models.stackedAreaChart = function() {
                         //To handle situation where the stacked area chart is negative, we need to use absolute values
                         //when checking if the mouse Y value is within the stack area.
                         yValue = Math.abs(yValue);
-                        var stackedY0 = Math.abs(series.stackedValue.y0);
-                        var stackedY = Math.abs(series.stackedValue.y);
+                        var stackedY0 = Math.abs(series.point.display.y0);
+                        var stackedY = Math.abs(series.point.display.y);
                         if ( yValue >= stackedY0 && yValue <= (stackedY + stackedY0))
                         {
                             indexToHighlight = i;
@@ -13890,6 +13903,7 @@ nv.models.stackedAreaChart = function() {
 
     return chart;
 };
+
 // based on http://bl.ocks.org/kerryrodden/477c1bfb081b783f80ad
 nv.models.sunburst = function() {
     "use strict";
