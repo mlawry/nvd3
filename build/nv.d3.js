@@ -1,4 +1,4 @@
-/* nvd3 version 1.8.2-mlawry (https://github.com/novus/nvd3) 2016-06-08 */
+/* nvd3 version 1.8.2-mlawry (https://github.com/novus/nvd3) 2016-08-24 */
 (function(){
 
 // set up main nv object

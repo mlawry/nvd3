@@ -1,4 +1,4 @@
-/* nvd3 version 1.8.2-mlawry (https://github.com/novus/nvd3) 2016-06-08 */
+/* nvd3 version 1.8.2-mlawry (https://github.com/novus/nvd3) 2016-08-24 */
 .nvd3 .nv-axis {
     pointer-events:none;
     opacity: 1;
@@ -491,7 +491,7 @@ svg.nvd3-svg {
 }
 /* stacked area */
 .nvd3.nv-stackedarea path.nv-area {
-    fill-opacity: .7;
+    fill-opacity: 1;
     stroke-opacity: 0;
     transition: fill-opacity 250ms linear, stroke-opacity 250ms linear;
     -moz-transition: fill-opacity 250ms linear, stroke-opacity 250ms linear;
@@ -499,7 +499,7 @@ svg.nvd3-svg {
 }
 
 .nvd3.nv-stackedarea path.nv-area.hover {
-    fill-opacity: .9;
+    fill-opacity: 0.7;
 }
 
 
