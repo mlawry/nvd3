@@ -1,4 +1,4 @@
-/* nvd3 version 1.8.2-mlawry (https://github.com/novus/nvd3) 2016-08-24 */
+/* nvd3 version 1.8.2-mlawry (https://github.com/novus/nvd3) 2016-08-25 */
 (function(){
 
 // set up main nv object
@@ -5864,6 +5864,8 @@ nv.models.legend = function() {
         }
 
         function setBGColor(d,i) {
+            color(d,0); // Temp fix
+            color(d,1); // Temp fix
             if(expanded && vers == 'furious') {
                 return d.disengaged ? '#eee' : d.color || color(d,i);
             } else {
