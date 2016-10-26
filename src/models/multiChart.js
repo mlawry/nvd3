@@ -372,8 +372,27 @@ nv.models.multiChart = function() {
 
             function mouseover_stack(evt) {
                 var yaxis = data[evt.seriesIndex].yAxis === 2 ? yAxis2 : yAxis1;
-                evt.point['x'] = stack1.x()(evt.point);
-                evt.point['y'] = stack1.y()(evt.point);
+                
+                // Note thanks to function updateInteractiveLayer() in scatter.js
+                // (look for "var mouseEventCallback"), evt.point['x'] and evt.point['y'] are already defined.
+                // The data required by tooltip is according to tooltip.js (look for "_.value = _.point.x;").
+                var ttd = {};
+                ttd.point = {};
+                ttd.point.x = evt.point['x'];
+                //ttd.point.y = evt.point['y'];   // see below
+                ttd.point.color = evt.point.color;
+                ttd.series = {};
+                ttd.series.color = evt.series.color;
+                ttd.series.key = evt.series.key;
+                //ttd.series.value = ttd.point.y; // see below
+                
+                // For stacked area charts, there are 2 values (y and y0).
+                // y is the absolute value (read off the y-axis, which includes other values stacked below it)
+                // y0 is the y value of just this particular series (excludes other stacks)
+                // We want the y0 value to be displayed in tooltip. evt.point.y is y not y0.
+                ttd.point.y = evt.point.display.y;
+                ttd.series.value = ttd.point.y;
+
                 tooltip
                     .duration(0)
                     .headerFormatter(function(d, i) {
@@ -382,7 +401,7 @@ nv.models.multiChart = function() {
                     .valueFormatter(function(d, i) {
                         return yaxis.tickFormat()(d, i);
                     })
-                    .data(evt)
+                    .data(ttd)
                     .hidden(false);
             }
 
