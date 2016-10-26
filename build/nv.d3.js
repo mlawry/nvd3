@@ -1,4 +1,4 @@
-/* nvd3 version 1.8.2-mlawry (https://github.com/novus/nvd3) 2016-08-25 */
+/* nvd3 version 1.8.2-mlawry (https://github.com/novus/nvd3) 2016-10-27 */
 (function(){
 
 // set up main nv object
@@ -9618,8 +9618,27 @@ nv.models.multiChart = function() {
 
             function mouseover_stack(evt) {
                 var yaxis = data[evt.seriesIndex].yAxis === 2 ? yAxis2 : yAxis1;
-                evt.point['x'] = stack1.x()(evt.point);
-                evt.point['y'] = stack1.y()(evt.point);
+                
+                // Note thanks to function updateInteractiveLayer() in scatter.js
+                // (look for "var mouseEventCallback"), evt.point['x'] and evt.point['y'] are already defined.
+                // The data required by tooltip is according to tooltip.js (look for "_.value = _.point.x;").
+                var ttd = {};
+                ttd.point = {};
+                ttd.point.x = evt.point['x'];
+                //ttd.point.y = evt.point['y'];   // see below
+                ttd.point.color = evt.point.color;
+                ttd.series = {};
+                ttd.series.color = evt.series.color;
+                ttd.series.key = evt.series.key;
+                //ttd.series.value = ttd.point.y; // see below
+                
+                // For stacked area charts, there are 2 values (y and y0).
+                // y is the absolute value (read off the y-axis, which includes other values stacked below it)
+                // y0 is the y value of just this particular series (excludes other stacks)
+                // We want the y0 value to be displayed in tooltip. evt.point.y is y not y0.
+                ttd.point.y = evt.point.display.y;
+                ttd.series.value = ttd.point.y;
+
                 tooltip
                     .duration(0)
                     .headerFormatter(function(d, i) {
@@ -9628,7 +9647,7 @@ nv.models.multiChart = function() {
                     .valueFormatter(function(d, i) {
                         return yaxis.tickFormat()(d, i);
                     })
-                    .data(evt)
+                    .data(ttd)
                     .hidden(false);
             }
 
@@ -11888,12 +11907,45 @@ nv.models.scatter = function() {
                         if (needsUpdate) return 0;
                         var series = data[d.series];
                         if (series === undefined) return;
-                        var point  = series.values[d.point];
-                        point['color'] = color(series, d.series);
+                        var point2 = series.values[d.point];
+                        if (point2 === undefined) return;
+                        
+                        // At this point, point2 is a direct reference to an element in the series.values array.
+                        // The next block of code will want to modify point2 itself, which will result in series.values
+                        // elements being modified. We do not want to modify series.values, so we have to make a copy of
+                        // point2, the easiest way is to clone point2 via JSON.
+                        point2 = JSON.parse(JSON.stringify(point2));
+                        
+                        // Changes to point2 no longer affect corresponding series.values element.
+                        point2['color'] = color(series, d.series);
 
-                        // standardize attributes for tooltip.
-                        point['x'] = getX(point);
-                        point['y'] = getY(point);
+                        // The reason why we don't want to modify series.values is because of the code below.
+                        // The code standardizes attributes for tooltip to be .x and .y because tooltip does not
+                        // have access to getX() and getY(). However, stackedArea chart "inherits" this chart,
+                        // and its getY() does the following (search for code in stackedArea.js):
+                        //
+                        //   if (d.display !== undefined) { return d.display.y + d.display.y0; }
+                        //
+                        // And when the series gets hidden and shown again (via clicking on the legend), the following
+                        // code gets run (search for code in stackedArea.js):
+                        //
+                        //   .out(function(d, y0, y) {
+                        //     d.display = {
+                        //        y: y,
+                        //       y0: y0
+                        //     };
+                        //   })
+                        //
+                        // So as you can see, there is a potential feedback cycle because point2.y is computed from
+                        // point2.display.y, so if saved into series.values, later on point2.display.y is computed
+                        // again from the point2.y value. This results in an incorrect point2.y value.
+                        //
+                        // By not saving point2.y in series.values, we avoid this feedback cycle. Interestingly this
+                        // bug only happens with multiChart, because this anonymous function (mouseEventCallback)
+                        // does not get called for stackedAreaChart (it uses its own event handler). This anon function
+                        // does get called for scatterChart, but its getY() happens to not cause a feedback cycle.
+                        point2['x'] = getX(point2);
+                        point2['y'] = getY(point2);
 
                         // can't just get box of event node since it's actually a voronoi polygon
                         var box = container.node().getBoundingClientRect();
@@ -11901,15 +11953,15 @@ nv.models.scatter = function() {
                         var scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
 
                         var pos = {
-                            left: x(getX(point, d.point)) + box.left + scrollLeft + margin.left + 10,
-                            top: y(getY(point, d.point)) + box.top + scrollTop + margin.top + 10
+                            left: x(getX(point2, d.point)) + box.left + scrollLeft + margin.left + 10,
+                            top: y(getY(point2, d.point)) + box.top + scrollTop + margin.top + 10
                         };
 
                         mDispatch({
-                            point: point,
+                            point: point2,
                             series: series,
                             pos: pos,
-                            relativePos: [x(getX(point, d.point)) + margin.left, y(getY(point, d.point)) + margin.top],
+                            relativePos: [x(getX(point2, d.point)) + margin.left, y(getY(point2, d.point)) + margin.top],
                             seriesIndex: d.series,
                             pointIndex: d.point
                         });
