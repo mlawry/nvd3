@@ -346,7 +346,7 @@ nv.models.multiChart = function() {
             //------------------------------------------------------------
 
             function mouseover_line(evt) {
-                var yaxis = data[evt.seriesIndex].yAxis === 2 ? yAxis2 : yAxis1;
+                var yaxis = evt.series.yAxis === 2 ? yAxis2 : yAxis1;
                 evt.value = evt.point.x;
                 evt.series = {
                     value: evt.point.y,
@@ -366,7 +366,7 @@ nv.models.multiChart = function() {
             }
 
             function mouseover_scatter(evt) {
-                var yaxis = data[evt.seriesIndex].yAxis === 2 ? yAxis2 : yAxis1;
+                var yaxis = evt.series.yAxis === 2 ? yAxis2 : yAxis1;
                 evt.value = evt.point.x;
                 evt.series = {
                     value: evt.point.y,
@@ -386,7 +386,7 @@ nv.models.multiChart = function() {
             }
 
             function mouseover_stack(evt) {
-                var yaxis = data[evt.seriesIndex].yAxis === 2 ? yAxis2 : yAxis1;
+                var yaxis = evt.series.yAxis === 2 ? yAxis2 : yAxis1;
                 
                 // Note thanks to function updateInteractiveLayer() in scatter.js
                 // (look for "var mouseEventCallback"), evt.point['x'] and evt.point['y'] are already defined.
@@ -421,7 +421,7 @@ nv.models.multiChart = function() {
             }
 
             function mouseover_bar(evt) {
-                var yaxis = data[evt.data.series].yAxis === 2 ? yAxis2 : yAxis1;
+                var yaxis = evt.series.yAxis === 2 ? yAxis2 : yAxis1;
 
                 evt.value = bars1.x()(evt.data);
                 evt['series'] = {
