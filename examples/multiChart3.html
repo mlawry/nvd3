@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link href="../build/nv.d3.css" rel="stylesheet" type="text/css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.14/d3.min.js" charset="utf-8"></script>
+    <script src="../build/nv.d3.js"></script>
+
+    <style>
+        text {
+            font: 12px sans-serif;
+        }
+        svg {
+            display: block;
+        }
+        html, body, #chart1, svg {
+            margin: 0px;
+            padding: 0px;
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class='with-3d-shadow with-transitions'>
+
+<div id="chart1" >
+    <svg> </svg>
+</div>
+
+<script>
+
+    var testdata = [{}, {}, {}];
+   
+    //Data
+    var da0 = [{"x":0.0,"y":5200000.0},{"x":1.0,"y":5200000.0},{"x":2.0,"y":5200000.0},{"x":3.0,"y":5200000.0},{"x":4.0,"y":5200000.0},{"x":5.0,"y":5200000.0},{"x":6.0,"y":5200000.0},{"x":7.0,"y":5200000.0},{"x":8.0,"y":5200000.0},{"x":9.0,"y":5200000.0},{"x":10.0,"y":5200000.0},{"x":11.0,"y":5200000.0},{"x":12.0,"y":5200000.0},{"x":13.0,"y":5200000.0},{"x":14.0,"y":5200000.0},{"x":15.0,"y":5200000.0}];
+    var da1 = [{"x":0.0,"y":5484450.1960784309},{"x":1.0,"y":6069905.86117647},{"x":2.0,"y":6700376.84193694},{"x":3.0,"y":7378505.1216505971},{"x":4.0,"y":8107879.4468227215},{"x":5.0,"y":8892358.5360482689},{"x":6.0,"y":9736014.6001307946},{"x":7.0,"y":10640998.025817003},{"x":8.0,"y":11611736.065642156},{"x":9.0,"y":12652974.967974044},{"x":10.0,"y":13769802.949385941},{"x":11.0,"y":14967674.821133848},{"x":12.0,"y":16252438.388835449},{"x":13.0,"y":17630362.753023162},{"x":14.0,"y":19108168.647436224},{"x":15.0,"y":20693060.961770933}];
+    var da2 = [{"x":0.0,"y":5435573.7431372544},{"x":1.0,"y":5884255.2414313722},{"x":2.0,"y":6370536.8127453644},{"x":3.0,"y":6894362.4915650142},{"x":4.0,"y":7457757.2276419271},{"x":5.0,"y":8063700.1614060476},{"x":6.0,"y":8715411.811937727},{"x":7.0,"y":9416773.9767812658},{"x":8.0,"y":10169095.967781222},{"x":9.0,"y":10976056.127426606},{"x":10.0,"y":11841597.823565761},{"x":11.0,"y":12769948.534926221},{"x":12.0,"y":13765640.310865911},{"x":13.0,"y":14833531.704301758},{"x":14.0,"y":15978831.283886056},{"x":15.0,"y":17207122.839137919}];
+    
+
+    testdata[0].key = "Net Equity";
+    testdata[0].values = da2;
+    testdata[0].type = "line";
+    testdata[0].yAxis = 1;
+    testdata[1].key = "Loan balance";
+    testdata[1].values = da0;
+    testdata[1].type = "bar";
+    testdata[1].yAxis = 1;
+    testdata[2].key = "Equity";
+    testdata[2].values = da1;
+    testdata[2].type = "bar";
+    testdata[2].yAxis = 1;
+
+    nv.addGraph(function() {
+        var chart = nv.models.multiChart()
+            .margin({top: 30, right: 90, bottom: 50, left: 90})
+            //.interpolate("linear")
+            //.useInteractiveGuideline(false)
+            ;
+        
+        chart.bars1.stacked(true);
+
+        chart.xAxis.tickFormat(d3.format('f'));
+        chart.yAxis1.tickFormat(d3.format('$,.0f'));
+        chart.yAxis2.tickFormat(d3.format('$,.0f'));
+
+        d3.select('#chart1 svg')
+            .datum(testdata)
+            .transition().duration(500).call(chart);
+
+        return chart;
+    });
+
+</script>
+</body>
+</html>
