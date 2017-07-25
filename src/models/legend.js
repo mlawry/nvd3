@@ -333,11 +333,11 @@ nv.models.legend = function() {
         }
 
         function setBGColor(d,i) {
-            color(d,0); // Temp fix
-            color(d,1); // Temp fix
             if(expanded && vers == 'furious') {
                 return d.disengaged ? '#eee' : d.color || color(d,i);
             } else {
+                if (!d.color)
+                  d.color = color(d,i);
                 return d.color || color(d,i);
             }
         }
