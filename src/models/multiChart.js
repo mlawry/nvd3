@@ -226,8 +226,10 @@ nv.models.multiChart = function() {
 
             var extraValue1BarStacked = [];
             if (bars1.stacked() && dataBars1.length) {
-                var extraValue1BarStacked = dataBars1.filter(function(d){return !d.disabled}).map(function(a){return a.values});
-                
+                // Clone srcarray so we do not end up modifying the source.
+                var srcarray = dataBars1.filter(function(d){return !d.disabled}).map(function(a){return a.values});
+                var extraValue1BarStacked = JSON.parse(JSON.stringify(srcarray));
+
                 if (extraValue1BarStacked.length > 0)
                     extraValue1BarStacked = extraValue1BarStacked.reduce(function(a,b){
                         return a.map(function(aVal,i){return {x: aVal.x, y: aVal.y + b[i].y}})
@@ -239,7 +241,9 @@ nv.models.multiChart = function() {
             
             var extraValue2BarStacked = [];
             if (bars2.stacked() && dataBars2.length) {
-                var extraValue2BarStacked = dataBars2.filter(function(d){return !d.disabled}).map(function(a){return a.values});
+                // Clone srcarray so we do not end up modifying the source.
+                var srcarray = dataBars2.filter(function(d){return !d.disabled}).map(function(a){return a.values});
+                var extraValue2BarStacked = JSON.parse(JSON.stringify(srcarray));
                 
                 if (extraValue2BarStacked.length > 0)
                     extraValue2BarStacked = extraValue2BarStacked.reduce(function(a,b){
