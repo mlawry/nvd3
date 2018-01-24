@@ -1,4 +1,4 @@
-/* nvd3 version 1.8.2-mlawry (https://github.com/novus/nvd3) 2017-07-26 */
+/* nvd3 version 1.8.2-mlawry (https://github.com/novus/nvd3) 2018-01-24 */
 (function(){
 
 // set up main nv object
@@ -7627,7 +7627,7 @@ nv.models.multiBar = function() {
             });
 
             // HACK for negative value stacking
-            if (stacked) {
+            if (stacked && data.length > 0) {
                 data[0].values.map(function(d,i) {
                     var posBase = 0, negBase = 0;
                     data.map(function(d, idx) {
@@ -8551,7 +8551,7 @@ nv.models.multiBarHorizontal = function() {
             });
 
             // HACK for negative value stacking
-            if (stacked)
+            if (stacked && data.length > 0)
                 data[0].values.map(function(d,i) {
                     var posBase = 0, negBase = 0;
                     data.map(function(d) {
@@ -9477,8 +9477,10 @@ nv.models.multiChart = function() {
 
             var extraValue1BarStacked = [];
             if (bars1.stacked() && dataBars1.length) {
-                var extraValue1BarStacked = dataBars1.filter(function(d){return !d.disabled}).map(function(a){return a.values});
-                
+                // Clone srcarray so we do not end up modifying the source.
+                var srcarray = dataBars1.filter(function(d){return !d.disabled}).map(function(a){return a.values});
+                var extraValue1BarStacked = JSON.parse(JSON.stringify(srcarray));
+
                 if (extraValue1BarStacked.length > 0)
                     extraValue1BarStacked = extraValue1BarStacked.reduce(function(a,b){
                         return a.map(function(aVal,i){return {x: aVal.x, y: aVal.y + b[i].y}})
@@ -9490,7 +9492,9 @@ nv.models.multiChart = function() {
             
             var extraValue2BarStacked = [];
             if (bars2.stacked() && dataBars2.length) {
-                var extraValue2BarStacked = dataBars2.filter(function(d){return !d.disabled}).map(function(a){return a.values});
+                // Clone srcarray so we do not end up modifying the source.
+                var srcarray = dataBars2.filter(function(d){return !d.disabled}).map(function(a){return a.values});
+                var extraValue2BarStacked = JSON.parse(JSON.stringify(srcarray));
                 
                 if (extraValue2BarStacked.length > 0)
                     extraValue2BarStacked = extraValue2BarStacked.reduce(function(a,b){
@@ -9517,9 +9521,6 @@ nv.models.multiChart = function() {
             bars2.yDomain(yScale2.domain());
             stack2.yDomain(yScale2.domain());
 
-            if(dataStack1.length){d3.transition(stack1Wrap).call(stack1);}
-            if(dataStack2.length){d3.transition(stack2Wrap).call(stack2);}
-
             // This is the outer padding to offset lines and x-axis to line up data points with bars.
             // When setting this variable, we're assuming all bars will be on bars1 or bars2, but not both.
             var rbcOffset = 0;
@@ -9539,6 +9540,15 @@ nv.models.multiChart = function() {
                 if (! dataBars2.every(function (series) { return series.disabled; })) {
                     rbcOffset = bars2.rangeBandCentreOffset();
                 }
+            }
+
+            if (dataStack1.length) {
+                stack1.scatter.padData(rbcOffset > 0);
+                d3.transition(stack1Wrap).call(stack1);
+            }
+            if (dataStack2.length) {
+                stack2.scatter.padData(rbcOffset > 0);
+                d3.transition(stack2Wrap).call(stack2);
             }
 
             if (dataLines1.length) {
