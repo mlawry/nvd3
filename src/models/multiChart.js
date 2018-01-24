@@ -270,9 +270,6 @@ nv.models.multiChart = function() {
             bars2.yDomain(yScale2.domain());
             stack2.yDomain(yScale2.domain());
 
-            if(dataStack1.length){d3.transition(stack1Wrap).call(stack1);}
-            if(dataStack2.length){d3.transition(stack2Wrap).call(stack2);}
-
             // This is the outer padding to offset lines and x-axis to line up data points with bars.
             // When setting this variable, we're assuming all bars will be on bars1 or bars2, but not both.
             var rbcOffset = 0;
@@ -292,6 +289,15 @@ nv.models.multiChart = function() {
                 if (! dataBars2.every(function (series) { return series.disabled; })) {
                     rbcOffset = bars2.rangeBandCentreOffset();
                 }
+            }
+
+            if (dataStack1.length) {
+                stack1.scatter.padData(rbcOffset > 0);
+                d3.transition(stack1Wrap).call(stack1);
+            }
+            if (dataStack2.length) {
+                stack2.scatter.padData(rbcOffset > 0);
+                d3.transition(stack2Wrap).call(stack2);
             }
 
             if (dataLines1.length) {
