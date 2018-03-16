@@ -235,7 +235,8 @@ nv.models.multiChart = function() {
                         return a.map(function(aVal,i){return {x: aVal.x, y: aVal.y + b[i].y}})
                     });
             }
-            if (dataBars1.length) {
+            if (dataBars1.length || dataStack1.length) {
+                // Existence of bar or stackedArea automatically requires y-axis to show 0 value.
                 extraValue1BarStacked.push({x:0, y:0});
             }
             
@@ -250,7 +251,8 @@ nv.models.multiChart = function() {
                         return a.map(function(aVal,i){return {x: aVal.x, y: aVal.y + b[i].y}})
                     });
             }
-            if (dataBars2.length) {
+            if (dataBars2.length || dataStack2.length) {
+                // Existence of bar or stackedArea automatically requires y-axis to show 0 value.
                 extraValue2BarStacked.push({x:0, y:0});
             }
             
