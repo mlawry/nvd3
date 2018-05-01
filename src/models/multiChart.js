@@ -226,14 +226,15 @@ nv.models.multiChart = function() {
 
             var extraValue1BarStacked = [];
             if (bars1.stacked() && dataBars1.length) {
-                // Clone srcarray so we do not end up modifying the source.
+                // Construct a new series that sums the data points of all stacked bars assigned to yAxis1.
+                // This way yScale1 correctly encompasses the tallest stacked bar appearing on yAxis1.
                 var srcarray = dataBars1.filter(function(d){return !d.disabled}).map(function(a){return a.values});
-                var extraValue1BarStacked = JSON.parse(JSON.stringify(srcarray));
-
-                if (extraValue1BarStacked.length > 0)
-                    extraValue1BarStacked = extraValue1BarStacked.reduce(function(a,b){
-                        return a.map(function(aVal,i){return {x: aVal.x, y: aVal.y + b[i].y}})
-                    });
+                extraValue1BarStacked = extraValue1BarStacked.concat(createSummedStackedSeriesData(srcarray));
+            }
+            if (dataStack1.length) { // No need to stack1.stacked() because it is always stacked.
+                // Do the same for stacked area like we did for stacked bars above.
+                var srcarray = dataStack1.filter(function(d){return !d.disabled}).map(function(a){return a.values});
+                extraValue1BarStacked = extraValue1BarStacked.concat(createSummedStackedSeriesData(srcarray));
             }
             if (dataBars1.length || dataStack1.length) {
                 // Existence of bar or stackedArea automatically requires y-axis to show 0 value.
@@ -242,14 +243,15 @@ nv.models.multiChart = function() {
             
             var extraValue2BarStacked = [];
             if (bars2.stacked() && dataBars2.length) {
-                // Clone srcarray so we do not end up modifying the source.
+                // Construct a new series that sums the data points of all stacked bars assigned to yAxis2.
+                // This way yScale2 correctly encompasses the tallest stacked bar appearing on yAxis2.
                 var srcarray = dataBars2.filter(function(d){return !d.disabled}).map(function(a){return a.values});
-                var extraValue2BarStacked = JSON.parse(JSON.stringify(srcarray));
-                
-                if (extraValue2BarStacked.length > 0)
-                    extraValue2BarStacked = extraValue2BarStacked.reduce(function(a,b){
-                        return a.map(function(aVal,i){return {x: aVal.x, y: aVal.y + b[i].y}})
-                    });
+                extraValue2BarStacked = extraValue2BarStacked.concat(createSummedStackedSeriesData(srcarray));
+            }
+            if (dataStack2.length) { // No need to stack2.stacked() because it is always stacked.
+                // Do the same for stacked area like we did for stacked bars above.
+                var srcarray = dataStack2.filter(function(d){return !d.disabled}).map(function(a){return a.values});
+                extraValue2BarStacked = extraValue2BarStacked.concat(createSummedStackedSeriesData(srcarray));
             }
             if (dataBars2.length || dataStack2.length) {
                 // Existence of bar or stackedArea automatically requires y-axis to show 0 value.
@@ -360,6 +362,26 @@ nv.models.multiChart = function() {
                 wrap.select(".nv-interactive").call(interactiveLayer);
             }
 
+            //============================================================
+            // Support functions
+            //------------------------------------------------------------
+            
+            function createSummedStackedSeriesData(srcarray) {
+                // srcarray - an array of {x:a,y:b} values.
+                // Clone srcarray so we do not end up modifying the source.
+                var newarray = JSON.parse(JSON.stringify(srcarray));
+
+                if (newarray.length > 0) {
+                    newarray = newarray.reduce(function (a, b) {
+                        return a.map(function (aVal, i) {
+                            return { "x": aVal.x, "y": (aVal.y + b[i].y) };
+                        });
+                    });
+                }
+                
+                return newarray;
+            }
+            
             //============================================================
             // Event Handling/Dispatching
             //------------------------------------------------------------

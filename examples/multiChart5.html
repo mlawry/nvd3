@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <link href="../build/nv.d3.css" rel="stylesheet" type="text/css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.14/d3.min.js" charset="utf-8"></script>
+    <script src="../build/nv.d3.js"></script>
+
+    <style>
+        text {
+            font: 12px sans-serif;
+        }
+        svg {
+            display: block;
+        }
+        html, body, #chart1, svg {
+            margin: 0px;
+            padding: 0px;
+            height: 100%;
+            width: 100%;
+        }
+    </style>
+</head>
+<body class='with-3d-shadow with-transitions'>
+
+<div id="chart1" >
+    <svg> </svg>
+</div>
+
+<script>
+
+    var testdata = [{}, {}, {}, {}];
+   
+    //Data
+    testdata[0] = {
+        "key":"Cumulative savings",
+        "type":"area",
+        "color":"blue",
+        "yAxis":1,
+        "values":[{"x":0,"y":10},{"x":1,"y":11},{"x":2,"y":12},{"x":3,"y":13},{"x":4,"y":14},{"x":5,"y":15},{"x":6,"y":16},{"x":7,"y":17},{"x":8,"y":18},{"x":9,"y":19},{"x":10,"y":20}]
+    };
+    testdata[1] = {
+        "key":"Estimated yearly savings",
+        "type":"line",
+        "color":"red",
+        "yAxis":1,
+        "values":[{"x":0,"y":15},{"x":1,"y":16},{"x":2,"y":17},{"x":3,"y":18},{"x":4,"y":19},{"x":5,"y":20},{"x":6,"y":21},{"x":7,"y":22},{"x":8,"y":23},{"x":9,"y":24},{"x":10,"y":25}]
+    };
+    testdata[2] = {
+        "key":"Third series",
+        "type":"area",
+        "color":"green",
+        "yAxis":1,
+        "values":[{"x":0,"y":10},{"x":1,"y":12},{"x":2,"y":14},{"x":3,"y":16},{"x":4,"y":18},{"x":5,"y":20},{"x":6,"y":19},{"x":7,"y":17},{"x":8,"y":15},{"x":9,"y":13},{"x":10,"y":11}]
+    };
+    testdata[3] = {
+        "key":"Bar series",
+        "type":"bar",
+        "color":"purple",
+        "yAxis":1,
+        "values":[{"x":0,"y":2},{"x":1,"y":4},{"x":2,"y":6},{"x":3,"y":8},{"x":4,"y":10},{"x":5,"y":12},{"x":6,"y":14},{"x":7,"y":16},{"x":8,"y":18},{"x":9,"y":20},{"x":10,"y":22}]
+    };
+    
+    nv.addGraph(function() {
+        var chart = nv.models.multiChart()
+            .margin({top: 30, right: 90, bottom: 50, left: 90})
+            .interpolate("linear")
+            //.useInteractiveGuideline(false)
+            ;
+            
+        chart.xAxis.tickFormat(d3.format('f'));
+        chart.yAxis1.tickFormat(d3.format('f'));
+        chart.yAxis2.tickFormat(d3.format('f'));
+
+        d3.select('#chart1 svg')
+            .datum(testdata)
+            .transition().duration(500).call(chart);
+
+        return chart;
+    });
+
+</script>
+</body>
+</html>
