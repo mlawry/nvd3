@@ -67,7 +67,9 @@
             .interpolate("linear")
             //.useInteractiveGuideline(false)
             ;
-            
+        
+        chart.barsGroupSpacing(0.6);
+        
         chart.xAxis.tickFormat(d3.format('f'));
         chart.yAxis1.tickFormat(d3.format('f'));
         chart.yAxis2.tickFormat(d3.format('f'));

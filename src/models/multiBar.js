@@ -145,8 +145,12 @@ nv.models.multiBar = function() {
 
             // d3.merge concats array of arrays into a single array, and map extracts d.x from the array.
             // Documentataion for rangeBands here: https://github.com/mbostock/d3/wiki/Ordinal-Scales#ordinal_rangeBands
-            x.domain(xDomain || d3.merge(seriesData).map(function(d) { return d.x }))
-                .rangeBands(xRange || [0, availableWidth], groupSpacing);
+            x.domain(xDomain || d3.merge(seriesData).map(function(d) { return d.x }));
+        
+            // For some really strange reason, the outerPadding must be 10% larger than padding.
+            // Otherwise there is a misalignment in multiChart when bars are involved. To see the
+            // effect, just change 1.1 to 1.0 below, rebuild and look at examples/multiChart5.html
+            x.rangeBands(xRange || [0, availableWidth], groupSpacing, groupSpacing * 1.1);
 
             y.domain(yDomain || d3.extent(d3.merge(seriesData).map(function(d) {
                 var domain = d.y;
