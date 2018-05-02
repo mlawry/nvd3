@@ -1,4 +1,4 @@
-/* nvd3 version 1.8.2-mlawry (https://github.com/novus/nvd3) 2018-03-16 */
+/* nvd3 version 1.8.2-mlawry (https://github.com/novus/nvd3) 2018-05-02 */
 (function(){
 
 // set up main nv object
@@ -7544,7 +7544,6 @@ nv.models.multiBar = function() {
         , xRange
         , yRange
         , groupSpacing = 0.1
-        , rangeBandCentreOffset = 0 // For exclusive use by multiChart.
         , dispatch = d3.dispatch('chartClick', 'elementClick', 'elementDblClick', 'elementMouseover', 'elementMouseout', 'elementMousemove', 'renderEnd')
         ;
 
@@ -7661,11 +7660,12 @@ nv.models.multiBar = function() {
 
             // d3.merge concats array of arrays into a single array, and map extracts d.x from the array.
             // Documentataion for rangeBands here: https://github.com/mbostock/d3/wiki/Ordinal-Scales#ordinal_rangeBands
-            x.domain(xDomain || d3.merge(seriesData).map(function(d) { return d.x }))
-                .rangeBands(xRange || [0, availableWidth], groupSpacing);
-
-            // This value is exclusively used by multiChart later on to adjust lines and x-axis to align with bars.
-            rangeBandCentreOffset = x.rangeBand() / 2.0 + (groupSpacing * x.rangeBand()); // Verify groupSpacing part later.
+            x.domain(xDomain || d3.merge(seriesData).map(function(d) { return d.x }));
+        
+            // For some really strange reason, the outerPadding must be 10% larger than padding.
+            // Otherwise there is a misalignment in multiChart when bars are involved. To see the
+            // effect, just change 1.1 to 1.0 below, rebuild and look at examples/multiChart5.html
+            x.rangeBands(xRange || [0, availableWidth], groupSpacing, groupSpacing * 1.1);
 
             y.domain(yDomain || d3.extent(d3.merge(seriesData).map(function(d) {
                 var domain = d.y;
@@ -7941,7 +7941,6 @@ nv.models.multiBar = function() {
         id:          {get: function(){return id;}, set: function(_){id=_;}},
         hideable:    {get: function(){return hideable;}, set: function(_){hideable=_;}},
         groupSpacing:{get: function(){return groupSpacing;}, set: function(_){groupSpacing=_;}},
-        rangeBandCentreOffset: {get: function() {return rangeBandCentreOffset;}, set: function(_) {rangeBandCentreOffset = _;}},
 
         // options that require extra logic in the setter
         margin: {get: function(){return margin;}, set: function(_){
@@ -9349,6 +9348,39 @@ nv.models.multiChart = function() {
 
             x   .domain(d3.extent(d3.merge(series1.concat(series2)), function(d) { return d.x }))
                 .range([0, availableWidth]);
+            
+            if (hasEnabledSeries(dataBars1) || hasEnabledSeries(dataBars2)) {
+                // At least 1 bar series is showing, in which case we have to convert the x-axis scale
+                // to use ordinal instead of linear in order to align the labels with the middle of bars.
+                // See https://stackoverflow.com/questions/24797605/nvd3-js-multichart-x-axis-labels-is-aligned-to-multiple-lines-but-not-multiple
+                var xs = d3.scale.ordinal();
+                
+                // Set the domain, just need an array of values so that size equals to how many range bands we want.
+                if (series1.length > 0) {
+                    xs.domain(series1[0].map(function(d) { return d.x }));
+                } else {
+                    xs.domain(series2[0].map(function(d) { return d.x }));
+                }
+                
+                // Use the groupSpacing from the multiBars with data so that this scale will line up with their bars.
+                var padding = bars1.groupSpacing();
+                if (hasEnabledSeries(dataBars2)) {
+                    padding = bars2.groupSpacing();
+                }
+
+                // For some really strange reason, the outerPadding must be 10% larger than padding.
+                // Otherwise the xAxis do not line up with the stacks and lines. It probably has something
+                // to do with the way stacks and lines calculate padding when lines1.scatter.padData is true.
+                // (Stacks and lines calculate the outerPadding on a linear scale, using the value set in
+                // lines1.scatter.padDataOuter, may be there some mismatch somewhere...)
+                // Note bars1 and bars2 also apply a 10% increase to match the increase here, just look
+                // for "groupSpacing * 1.1" in multiBar.js.
+                xs.rangeBands([0, availableWidth], padding, padding * 1.1);
+                xAxis.scale(xs);
+            } else {
+                // No bar series showing so go back to the linear scale for xAxis.
+                xAxis.scale(x);
+            }
 
             var wrap = container.selectAll('g.wrap.multiChart').data([data]);
             var gEnter = wrap.enter().append('g').attr('class', 'wrap nvd3 multiChart').append('g');
@@ -9477,14 +9509,15 @@ nv.models.multiChart = function() {
 
             var extraValue1BarStacked = [];
             if (bars1.stacked() && dataBars1.length) {
-                // Clone srcarray so we do not end up modifying the source.
+                // Construct a new series that sums the data points of all stacked bars assigned to yAxis1.
+                // This way yScale1 correctly encompasses the tallest stacked bar appearing on yAxis1.
                 var srcarray = dataBars1.filter(function(d){return !d.disabled}).map(function(a){return a.values});
-                var extraValue1BarStacked = JSON.parse(JSON.stringify(srcarray));
-
-                if (extraValue1BarStacked.length > 0)
-                    extraValue1BarStacked = extraValue1BarStacked.reduce(function(a,b){
-                        return a.map(function(aVal,i){return {x: aVal.x, y: aVal.y + b[i].y}})
-                    });
+                extraValue1BarStacked = extraValue1BarStacked.concat(createSummedStackedSeriesData(srcarray));
+            }
+            if (dataStack1.length) { // No need to stack1.stacked() because it is always stacked.
+                // Do the same for stacked area like we did for stacked bars above.
+                var srcarray = dataStack1.filter(function(d){return !d.disabled}).map(function(a){return a.values});
+                extraValue1BarStacked = extraValue1BarStacked.concat(createSummedStackedSeriesData(srcarray));
             }
             if (dataBars1.length || dataStack1.length) {
                 // Existence of bar or stackedArea automatically requires y-axis to show 0 value.
@@ -9493,14 +9526,15 @@ nv.models.multiChart = function() {
             
             var extraValue2BarStacked = [];
             if (bars2.stacked() && dataBars2.length) {
-                // Clone srcarray so we do not end up modifying the source.
+                // Construct a new series that sums the data points of all stacked bars assigned to yAxis2.
+                // This way yScale2 correctly encompasses the tallest stacked bar appearing on yAxis2.
                 var srcarray = dataBars2.filter(function(d){return !d.disabled}).map(function(a){return a.values});
-                var extraValue2BarStacked = JSON.parse(JSON.stringify(srcarray));
-                
-                if (extraValue2BarStacked.length > 0)
-                    extraValue2BarStacked = extraValue2BarStacked.reduce(function(a,b){
-                        return a.map(function(aVal,i){return {x: aVal.x, y: aVal.y + b[i].y}})
-                    });
+                extraValue2BarStacked = extraValue2BarStacked.concat(createSummedStackedSeriesData(srcarray));
+            }
+            if (dataStack2.length) { // No need to stack2.stacked() because it is always stacked.
+                // Do the same for stacked area like we did for stacked bars above.
+                var srcarray = dataStack2.filter(function(d){return !d.disabled}).map(function(a){return a.values});
+                extraValue2BarStacked = extraValue2BarStacked.concat(createSummedStackedSeriesData(srcarray));
             }
             if (dataBars2.length || dataStack2.length) {
                 // Existence of bar or stackedArea automatically requires y-axis to show 0 value.
@@ -9523,42 +9557,40 @@ nv.models.multiChart = function() {
             bars2.yDomain(yScale2.domain());
             stack2.yDomain(yScale2.domain());
 
-            // This is the outer padding to offset lines and x-axis to line up data points with bars.
+            // True to add outer padding to offset lines and x-axis to line up data points with bars.
             // When setting this variable, we're assuming all bars will be on bars1 or bars2, but not both.
-            var rbcOffset = 0;
+            var rbcOffset = false;
 
             if (dataBars1.length) {
                 d3.transition(bars1Wrap).call(bars1);
-                // Leave rbcOffset as 0 if all series in dataBars are disabled, because the
-                // rangeBandCentreOffset value is invalid if all series are disabled.
-                if (! dataBars1.every(function (series) { return series.disabled; })) {
-                    rbcOffset = bars1.rangeBandCentreOffset();
+                // Leave rbcOffset as is if all series in dataBars are disabled. No need to pad if bars are not showing.
+                if (hasEnabledSeries(dataBars1)) {
+                    rbcOffset = true;
                 }
             }
             if (dataBars2.length) {
                 d3.transition(bars2Wrap).call(bars2);
-                // Leave rbcOffset as 0 if all series in dataBars are disabled, because the
-                // rangeBandCentreOffset value is invalid if all series are disabled.
-                if (! dataBars2.every(function (series) { return series.disabled; })) {
-                    rbcOffset = bars2.rangeBandCentreOffset();
+                // Leave rbcOffset as is if all series in dataBars are disabled. No need to pad if bars are not showing.
+                if (hasEnabledSeries(dataBars2)) {
+                    rbcOffset = true;
                 }
             }
 
             if (dataStack1.length) {
-                stack1.scatter.padData(rbcOffset > 0);
+                stack1.scatter.padData(rbcOffset);
                 d3.transition(stack1Wrap).call(stack1);
             }
             if (dataStack2.length) {
-                stack2.scatter.padData(rbcOffset > 0);
+                stack2.scatter.padData(rbcOffset);
                 d3.transition(stack2Wrap).call(stack2);
             }
 
             if (dataLines1.length) {
-                lines1.scatter.padData(rbcOffset > 0);
+                lines1.scatter.padData(rbcOffset);
                 d3.transition(lines1Wrap).call(lines1);
             }
             if (dataLines2.length) {
-                lines2.scatter.padData(rbcOffset > 0);
+                lines2.scatter.padData(rbcOffset);
                 d3.transition(lines2Wrap).call(lines2);
             }
 
@@ -9611,6 +9643,32 @@ nv.models.multiChart = function() {
                 wrap.select(".nv-interactive").call(interactiveLayer);
             }
 
+            //============================================================
+            // Support functions
+            //------------------------------------------------------------
+            
+            function createSummedStackedSeriesData(srcarray) {
+                // srcarray - an array of {x:a,y:b} values.
+                // Clone srcarray so we do not end up modifying the source.
+                var newarray = JSON.parse(JSON.stringify(srcarray));
+
+                if (newarray.length > 0) {
+                    newarray = newarray.reduce(function (a, b) {
+                        return a.map(function (aVal, i) {
+                            return { "x": aVal.x, "y": (aVal.y + b[i].y) };
+                        });
+                    });
+                }
+                
+                return newarray;
+            }
+            
+            function hasEnabledSeries(dataBars) {
+                if (dataBars && dataBars.length) {
+                    return dataBars.some(function (series) { return !series.disabled; })
+                }
+            }
+            
             //============================================================
             // Event Handling/Dispatching
             //------------------------------------------------------------
@@ -9924,6 +9982,26 @@ nv.models.multiChart = function() {
                 scatters2.interactive(false);
             }
         }},
+        barsGroupSpacing: {
+            get: function() {
+                return bars1.groupSpacing();
+            }, set: function(_) {
+                // groupSpacing shifts and shrinks the bars.
+                bars1.groupSpacing(_);
+                bars2.groupSpacing(_);
+                
+                // In order for the data points of lines, area and scatter to line up with the
+                // middle of the bars, we also need to adjust their padding by the same amount.
+                // Note padding only takes effect when lines1.scatter.padData is true, so when
+                // there are no bar data series the padDataOuters have no effect.
+                lines1.scatter.padDataOuter(_);
+                lines2.scatter.padDataOuter(_);
+                stack1.scatter.padDataOuter(_);
+                stack2.scatter.padDataOuter(_);
+                scatters1.padDataOuter(_);
+                scatters2.padDataOuter(_);
+            }
+        },
 
         duration: {get: function(){return duration;}, set: function(_) {
             duration = _;
