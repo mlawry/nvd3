@@ -70,9 +70,11 @@
         
         chart.barsGroupSpacing(0.6);
         
-        chart.xAxis.tickFormat(d3.format('f'));
-        chart.yAxis1.tickFormat(d3.format('f'));
+        chart.xAxis.axisLabel("x-axis label").tickFormat(d3.format('f'));
+        chart.yAxis1.axisLabel("left y-axis label").tickFormat(d3.format('f'));
         chart.yAxis2.tickFormat(d3.format('f'));
+        
+        chart.showLegend("bottom");
 
         d3.select('#chart1 svg')
             .datum(testdata)
