@@ -1,4 +1,4 @@
-/* nvd3 version 1.8.2-mlawry (https://github.com/novus/nvd3) 2018-05-02 */
+/* nvd3 version 1.8.2-mlawry (https://github.com/novus/nvd3) 2018-05-14 */
 (function(){
 
 // set up main nv object
@@ -9409,11 +9409,16 @@ nv.models.multiChart = function() {
             if (!showLegend) {
                 g.select('.legendWrap').selectAll('*').remove();
             } else {
-                var legendWidth = legend.align() ? availableWidth / 2 : availableWidth;
-                var legendXPosition = legend.align() ? legendWidth : 0;
+                // Commented out old way of computing legend position. New way is similar to lineChart.js.
+                //var legendWidth = legend.align() ? availableWidth / 2 : availableWidth;
+                //var legendXPosition = legend.align() ? legendWidth : 0;
 
-                legend.width(legendWidth);
+                legend.width(availableWidth);
                 legend.color(color_array);
+                
+                if (showLegend === "bottom") {
+                    legend.alignPos("centre");
+                }
 
                 g.select('.legendWrap')
                     .datum(data.map(function(series) {
@@ -9432,23 +9437,21 @@ nv.models.multiChart = function() {
                     margin.bottom = legend.height() + margin.original_bottom;
                 } else if (showLegend !== "bottom" && margin.top != legend.height()) {
                     margin.top = legend.height();
-                    availableHeight = nv.utils.availableHeight(height, container, margin);
                 }
-                availableHeight = (height || parseInt(container.style('height')) || 400) // In case top/bottom margin has changed.
-                    - margin.top - margin.bottom;
-
-                var legX, legY;
+                availableHeight = nv.utils.availableHeight(height, container, margin);
+                //availableHeight = (height || parseInt(container.style('height')) || 400) // In case top/bottom margin has changed.
+                //    - margin.top - margin.bottom;
+                // Again, old way of computing availableHeight commented out above. Also, legX is always 0 in the new way. 
+                var legX = 0, legY;
                 if (showLegend === "bottom") {
                     // New feature, legend to appear at bottom.
-                    legX = 0;
                     legY = availableHeight + (margin.bottom - legend.height());
                 } else {
                     // Original feature, legend appears at top.
-                    legX = availableWidth / 2;
                     legY = -margin.top;
                 }
                 g.select('.legendWrap')
-                    .attr('transform', 'translate(' + legendXPosition + ',' + (-margin.top) +')');
+                    .attr('transform', 'translate(' + legX + ',' + legY +')');
             }
 
             lines1
