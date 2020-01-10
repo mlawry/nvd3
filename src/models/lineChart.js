@@ -94,12 +94,12 @@ nv.models.lineChart = function() {
     function chart(selection) {
         renderWatch.reset();
         renderWatch.models(lines);
-        renderWatch.models(lines2);
+        //renderWatch.models(lines2);
         if (showXAxis) renderWatch.models(xAxis);
         if (showYAxis) renderWatch.models(yAxis);
 
-        if (focusShowAxisX) renderWatch.models(x2Axis);
-        if (focusShowAxisY) renderWatch.models(y2Axis);
+        //if (focusShowAxisX) renderWatch.models(x2Axis);
+        //if (focusShowAxisY) renderWatch.models(y2Axis);
         selection.each(function(data) {
             var container = d3.select(this);
             nv.utils.initSVG(container);
